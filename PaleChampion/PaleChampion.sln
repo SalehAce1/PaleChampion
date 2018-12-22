@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27428.2043
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PaleChampion", "PaleChampion\PaleChampion.csproj", "{B35E4587-B597-400A-ACD2-CCC322051F9B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B35E4587-B597-400A-ACD2-CCC322051F9B}.Debug|Any CPU.ActiveCfg = Release|Any CPU
+		{B35E4587-B597-400A-ACD2-CCC322051F9B}.Debug|Any CPU.Build.0 = Release|Any CPU
+		{B35E4587-B597-400A-ACD2-CCC322051F9B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B35E4587-B597-400A-ACD2-CCC322051F9B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D6A858E5-137F-4D97-A117-4A25450FFD17}
+	EndGlobalSection
+EndGlobal
