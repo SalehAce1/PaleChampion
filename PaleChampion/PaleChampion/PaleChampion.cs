@@ -19,10 +19,10 @@ namespace PaleChampion
         private string _lastScene;
 
         internal bool IsInHall => _lastScene == "GG_Lurker";
-
+        public static readonly IList<Sprite> SPRITES = new List<Sprite>();
         //public override string GetVersion()
         //{
-            //return FileVersionInfo.GetVersionInfo(Assembly.GetAssembly(typeof(PaleChampion)).Location).FileVersion;
+        //return FileVersionInfo.GetVersionInfo(Assembly.GetAssembly(typeof(PaleChampion)).Location).FileVersion;
         //}
 
         public override void Initialize()
@@ -37,6 +37,32 @@ namespace PaleChampion
 
             int ind = 0;
             Assembly asm = Assembly.GetExecutingAssembly();
+            foreach (string res in asm.GetManifestResourceNames())
+            {
+                if (!res.EndsWith(".png"))
+                {
+                    Log("Unknown resource: " + res);
+
+                    continue;
+                }
+
+                using (Stream s = asm.GetManifestResourceStream(res))
+                {
+                    if (s == null) continue;
+
+                    byte[] buffer = new byte[s.Length];
+                    s.Read(buffer, 0, buffer.Length);
+                    s.Dispose();
+
+                    // Create texture from bytes
+                    var tex = new Texture2D(1, 1);
+                    tex.LoadImage(buffer,true);
+                    // Create sprite from texture
+                    SPRITES.Add(Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f)));
+
+                    Log("Created sprite from embedded image: " + res + " at ind " + ++ind);
+                }
+            }
 
             /*Resources.LoadAll<GameObject>("");
             foreach (var i in Resources.FindObjectsOfTypeAll<GameObject>())

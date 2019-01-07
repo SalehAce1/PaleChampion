@@ -6,7 +6,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{B35E4587-B597-400A-ACD2-CCC322051F9B}</ProjectGuid>
     <OutputType>Library</OutputType>
-	<AppDesignerFolder>Properties</AppDesignerFolder>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>PaleChampion</RootNamespace>
     <AssemblyName>PaleChampion</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
@@ -32,10 +32,15 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="DungPillar.cs" />
     <Compile Include="LurkerFinder.cs" />
     <Compile Include="PaleChampion.cs" />
     <Compile Include="PaleLurker.cs" />
     <Compile Include="ReflectionHelper.cs" />
+    <Compile Include="SawBladeMove.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="assets\wded.png" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
