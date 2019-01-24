@@ -33,14 +33,20 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="DungPillar.cs" />
+    <Compile Include="LoadGO.cs" />
     <Compile Include="LurkerFinder.cs" />
     <Compile Include="PaleChampion.cs" />
     <Compile Include="PaleLurker.cs" />
-    <Compile Include="ReflectionHelper.cs" />
     <Compile Include="SawBladeMove.cs" />
+    <Compile Include="WavUtility.cs" />
+    <Compile Include="MusicLoad.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="assets\wded.png" />
+    <EmbeddedResource Include="assets\1wded.png" />
+    <EmbeddedResource Include="assets\2palelurker.png" />
+    <EmbeddedResource Include="assets\3saws.png" />
+    <EmbeddedResource Include="assets\4Lurker.png" />
+    <EmbeddedResource Include="assets\pLMus.wav" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
@@ -77,5 +83,10 @@
       <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\UnityEngine.UI.dll</HintPath>
     </Reference>
   </ItemGroup>
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="@echo on" />
+    <Exec Command="echo Copying mod" />
+    <Exec Command="copy &quot;$(TargetPath)&quot; &quot;C:\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\Mods\&quot;" />
+  </Target>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

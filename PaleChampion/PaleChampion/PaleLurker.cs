@@ -14,7 +14,6 @@ using USceneManager = UnityEngine.SceneManagement.SceneManager;
 using System.IO;
 using System;
 using On;
-using On.HutongGames.PlayMaker.Actions;
 
 namespace PaleChampion
 {
@@ -34,6 +33,8 @@ namespace PaleChampion
         private bool isDigFixed;
         public static int hits = 0;
         public static GameObject[] sawBlades = new GameObject[4];
+        public GameObject[] lurkerBarbs = new GameObject[5];
+        Texture oldPLTex;
         private PlayMakerFSM dreamNail;
         private string[] HeroAttacks = { "Slash", "DownSlash", "UpSlash", "Fireball2 Spiral(Clone)", "Sharp Shadow",
                                          "Hit R", "Hit L", "Hit U", "Q Fall Damage", "Great Slash", "Dash Slash" };
@@ -53,6 +54,7 @@ namespace PaleChampion
             var scaleL = gameObject.transform.localScale;
             gameObject.transform.localScale = new Vector3(scaleL.x * -1f, scaleL.y, scaleL.z);
             gameObject.GetComponent<Rigidbody2D>().velocity = new Vector2(-1f * xL, yL);
+            
         }
 
         public void FixDig()
@@ -78,15 +80,13 @@ namespace PaleChampion
             if (xH - xL > 0)
             {
                 var newX = xH + 5f;
-                if (newX > 156.1f && newX < 162.8f && xH < 156.1f) newX = xH - 5f;
-                if (newX > 202.7f) newX = xH - 5f;
+                if (newX > 119f) newX = xH - 5f;
                 gameObject.transform.SetPosition2D(newX, yL);
             }
             else
             {
                 var newX = xH - 5f;
-                if (newX > 156.1f && newX < 162.8f && xH < 156.1f) newX = xH + 5f;
-                if (newX < 117.1f) newX = xH + 5f;
+                if (newX < 85.5f) newX = xH + 5f;
                 gameObject.transform.SetPosition2D(newX, yL);
             }
         }
@@ -113,11 +113,26 @@ namespace PaleChampion
             _anim = gameObject.GetComponent<tk2dSpriteAnimator>();
             dreamNail = HeroController.instance.gameObject.LocateMyFSM("Dream Nail");
         }
-
+        public static void SaveTextureAsPNG(Texture2D _texture, string _fullPath)
+        {
+            byte[] _bytes = _texture.EncodeToPNG();
+            System.IO.File.WriteAllBytes(_fullPath, _bytes);
+            Debug.Log(_bytes.Length / 1024 + "Kb was saved as: " + _fullPath);
+        }
         private void Start()
         {
-            Log("Setting health");
-            _hm.hp = 1800;
+            try
+            {
+                //HeroController.instance.spellControl.gameObject.GetComponent<AudioSource>().PlayOneShot(MusicLoad.LoadAssets.PLMusic);
+                oldPLTex = gameObject.GetComponent<tk2dSprite>().GetCurrentSpriteDef().material.mainTexture;
+                gameObject.GetComponent<tk2dSprite>().GetCurrentSpriteDef().material.mainTexture = PaleChampion.SPRITES[3].texture;
+                Log("Setting health");
+                //_hm.hp = 1800;
+            }
+            catch(System.Exception e)
+            {
+                Log(e);
+            }
 
             Log("Changing fps of animation");
             foreach (KeyValuePair<string, float> i in _fpsDict)
@@ -154,46 +169,46 @@ namespace PaleChampion
                 _control.InsertMethod("Hop Antic", 0, Evade);
 
                 Log("Make pillar spikes appear when digging");
-                _control.InsertCoroutine("Dig 1", 0, SpawnDungPillar);
-
-                Log("Adding saw blades");
-                for (int i = 0; i < sawBlades.Length; i++)
+                _control.InsertMethod("Dig 1", 0, PillarOrSaw);
+                _control.RemoveAction("Dig 2", 0);
+                _control.InsertAction("Dig 2", new Wait
                 {
-                    sawBlades[i] = Instantiate(LurkerFinder.sawOrig);
-                    sawBlades[i].SetActive(true);
-                    sawBlades[i].GetComponent<DamageHero>().hazardType = 0;
-                    sawBlades[i].AddComponent<Rigidbody2D>();
-                    sawBlades[i].GetComponent<Rigidbody2D>().gravityScale = 0f;
-                    sawBlades[i].GetComponent<Rigidbody2D>().isKinematic = true;
-                    sawBlades[i].AddComponent<SawBladeMove>();
+                    time = 0.1f,
+                    finishEvent = FsmEvent.Finished,
+                    realTime = false
+                },0);
+
+                Log("Throw barbs in a spread");
+                var throwing = _control.GetAction<FlingObjectsFromGlobalPoolVel>("Wallbarb", 3);
+                for (int i = 0; i < 10; i++)
+                {  
+                    _control.AddAction("Wallbarb", new FlingObjectsFromGlobalPoolVel
+                    {
+                        gameObject = throwing.gameObject,
+                        spawnPoint = throwing.spawnPoint,
+                        position = throwing.position,
+                        spawnMin = throwing.spawnMin,
+                        spawnMax = throwing.spawnMax,
+                        speedMinX = throwing.speedMaxX.Value + 10f * i,
+                        speedMaxX = throwing.speedMaxX.Value + 10f * i,
+                        speedMinY = throwing.speedMaxY.Value + 20f,
+                        speedMaxY = throwing.speedMaxY.Value + 20f,
+                        originVariationX = 0,
+                        originVariationY = 0
+                    });
                 }
-                sawBlades[0].transform.SetPosition2D(109.3f, 79.4f-1.5f);
-                sawBlades[1].transform.SetPosition2D(162.8f, 79.4f - 1.5f);
-                sawBlades[2].transform.SetPosition2D(117.1f, 108.4f - 1.5f);
-                sawBlades[3].transform.SetPosition2D(162.8f, 108.4f - 1.5f);
-                var a = Instantiate(HeroController.instance.gameObject);
-                a.transform.SetPosition2D(115.3f, 109f);
-                a.SetActive(true);
-
-                Log("Checking if Dream Nailed, needed later.");
-                dreamNail.InsertMethod("End", 0, LogThis);
-
-                foreach (var i in Resources.FindObjectsOfTypeAll<GameObject>())
-                {
-                    Log("Names: " + i.name);
-                }
-
+                //_control.InsertMethod("Dig 2", 0, () => _anim.Play("DigIn 2"));
             }
             catch (Exception e)
             {
                 Log(e);
             }
         }
-
         public void LogThis()
         {
             Log("wow this is working?");
         }
+
 
         void OnTriggerEnter2D(Collider2D col)
         {
@@ -201,6 +216,49 @@ namespace PaleChampion
             if (HeroAttacks.Contains(col.name))
             {
                 hits++;
+            }
+        }
+        public int digCount = 0;
+        public void PillarOrSaw()
+        {
+            try
+            {
+               //var plat = Instantiate(LurkerFinder.platformCol[0]);
+              // plat.LocateMyFSM("Control").SendEvent("PLAT EXPAND");
+              // plat.transform.SetPosition2D(90f, 7.4f);
+              // plat.SetActive(true);
+            }
+            catch(System.Exception e)
+            {
+                Log(e);
+            }
+            if (digCount < 3)
+            {
+                digCount++;
+                _control.GetAction<Wait>("Dig 2", 0).time = 0.1f;
+                StartCoroutine(SpawnDungPillar());
+            }
+            else
+            {
+                digCount = 0;
+                _control.GetAction<Wait>("Dig 2", 0).time = 5f;
+                StartCoroutine(SpawnSawsHorizontal());
+            }
+        }
+        public IEnumerator SpawnSawsHorizontal()
+        {
+            Log("Adding saw blades");
+            for (int i = 0; i < sawBlades.Length; i++)
+            {
+                sawBlades[i] = Instantiate(LoadGO.sawOrig);
+                sawBlades[i].SetActive(true);
+                sawBlades[i].GetComponent<DamageHero>().hazardType = 0;
+                sawBlades[i].AddComponent<Rigidbody2D>();
+                sawBlades[i].GetComponent<Rigidbody2D>().gravityScale = 0f;
+                sawBlades[i].GetComponent<Rigidbody2D>().isKinematic = true;
+                sawBlades[i].transform.SetPosition2D(119.7f, 6.4f + i * 2.5f);
+                sawBlades[i].GetComponent<Rigidbody2D>().velocity = new Vector2(-15f, 0f);
+                yield return new WaitForSeconds(0.8f);
             }
         }
 
@@ -211,8 +269,8 @@ namespace PaleChampion
             yield return new WaitForSeconds(0.4f);
             for (int i = 0; i < 3; i++)
             {
-                var DungPill1 = Instantiate(LurkerFinder.pillarWD);
-                var DungPill2 = Instantiate(LurkerFinder.pillarWD);
+                var DungPill1 = Instantiate(LoadGO.pillarWD);
+                var DungPill2 = Instantiate(LoadGO.pillarWD);
                 var xSpikeScale = DungPill2.transform.localScale.x;
                 var ySpikeScale = DungPill2.transform.localScale.y;
                 var zSpikeScale = DungPill2.transform.localScale.z;
@@ -225,10 +283,10 @@ namespace PaleChampion
                 DungPill1.transform.SetPosition2D(xL + (i * 2.2f) + 1.5f, yL+4.5f);
                 DungPill2.transform.SetPosition2D(xL - (i * 2.2f) - 1.5f, yL+4.5f);
                 DungPill2.transform.localScale = new Vector3(-1f * xSpikeScale, ySpikeScale, zSpikeScale);
-                Log(yL);
                 yield return new WaitForSeconds(0.125f);
             }
         }
+
 
         private void Update()
         {
@@ -236,19 +294,18 @@ namespace PaleChampion
             var yH = HeroController.instance.transform.GetPositionY();
             var xL = gameObject.transform.GetPositionX();
             var yL = gameObject.transform.GetPositionY();
+            if (_control.ActiveStateName == "Idle")
+            {
+                _control.SendEvent("HERO L");
+            }
         }
 
         private void OnDestroy()
         {
+            gameObject.GetComponent<tk2dSprite>().GetCurrentSpriteDef().material.mainTexture = oldPLTex;
             ModHooks.Instance.TakeHealthHook -= TakeDamage;
-            
-            if (!_lurkerChanged) return;
+            Destroy(gameObject);
 
-            tk2dSpriteDefinition def = gameObject.GetComponent<tk2dSprite>().GetCurrentSpriteDef();
-
-            def.material.mainTexture = _oldTex;
-
-            _lurkerChanged = false;
         }
 
         private static void Log(object obj)
