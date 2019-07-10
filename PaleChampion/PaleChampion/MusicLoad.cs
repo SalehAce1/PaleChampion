@@ -20,23 +20,27 @@ namespace PaleChampion
     {
         public static class LoadAssets
         {
-            public static AudioClip PLMusic;
+            public static List<AudioClip> music = new List<AudioClip>();
 
-            public static void LoadMusicSound()
+            public static void LoadWavFile()
             {
                 Log("Starting");
                 foreach (string res in Assembly.GetExecutingAssembly().GetManifestResourceNames())
                 {
                     if (res.EndsWith(".wav"))
                     {
-                        Modding.Logger.Log("Found sound effect! Saving it.");
+                        Modding.Logger.Log("Found sound effect " + res + "! Saving it.");
                         Stream audioStream = Assembly.GetExecutingAssembly().GetManifestResourceStream(res);
                         if (audioStream != null)
                         {
                             byte[] buffer = new byte[audioStream.Length];
                             audioStream.Read(buffer, 0, buffer.Length);
                             audioStream.Dispose();
-                            PLMusic = WavUtility.ToAudioClip(buffer);
+                            WAV mus = new WAV(buffer);
+                            AudioClip audioClip = AudioClip.Create(res, mus.SampleCount, 1, mus.Frequency, false);
+                            audioClip.SetData(mus.LeftChannel, 0);
+                            //audioClip.SetData(mus.RightChannel, 0);
+                            music.Add(audioClip);
                         }
                     }
                 }
@@ -47,7 +51,7 @@ namespace PaleChampion
 
         private static void Log(object obj)
         {
-            Logger.Log("[Audio PV] " + obj);
+            Logger.Log("[Audio] " + obj);
         }
     }
 }

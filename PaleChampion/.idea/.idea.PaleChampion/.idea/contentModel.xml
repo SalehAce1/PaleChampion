@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ContentModelStore">
+    <e p="C:\Users\ghaem\.Rider2019.1\system\extResources" t="IncludeRecursive" />
+    <e p="C:\Users\ghaem\.Rider2019.1\system\resharper-host\local\Transient\ReSharperHost\v191\SolutionCaches\_PaleChampion.1846208852.00" t="ExcludeRecursive" />
+    <e p="C:\Users\ghaem\Desktop\Projects\HK Code\PaleChampion\PaleChampion" t="IncludeFlat">
+      <e p="packages" t="ExcludeRecursive" />
+      <e p="PaleChampion" t="IncludeRecursive">
+        <e p="assets" t="Include">
+          <e p="0wded.png" t="Include" />
+          <e p="1palelurker.png" t="Include" />
+          <e p="2saws.png" t="Include" />
+          <e p="3Lurker.png" t="Include" />
+          <e p="4spike.png" t="Include" />
+          <e p="5bomb.png" t="Include" />
+          <e p="6bomb.png" t="Include" />
+          <e p="7PC.png" t="Include" />
+          <e p="pLMus.wav" t="Include" />
+        </e>
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="DungPillar.cs" t="Include" />
+        <e p="LoadGO.cs" t="Include" />
+        <e p="LurkerFinder.cs" t="Include" />
+        <e p="MoveFloorUp.cs" t="Include" />
+        <e p="MusicLoad.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive" />
+        <e p="ObjectFlinger.cs" t="Include" />
+        <e p="PaleChampion.cs" t="Include" />
+        <e p="PaleChampion.csproj" t="IncludeRecursive" />
+        <e p="PaleLurker.cs" t="Include" />
+        <e p="SawHandler.cs" t="Include" />
+        <e p="SpawnPillar.cs" t="Include" />
+        <e p="SpikeCollider.cs" t="Include" />
+        <e p="ThrowingSpike.cs" t="Include" />
+        <e p="WavUtility.cs" t="Include" />
+      </e>
+      <e p="PaleChampion.sln" t="IncludeFlat" />
+    </e>
+  </component>
+</project>

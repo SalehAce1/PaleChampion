@@ -12,6 +12,7 @@
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -32,39 +33,123 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="AspidControl.cs" />
+    <Compile Include="BombCollider.cs" />
+    <Compile Include="CustomAnimator.cs" />
+    <Compile Include="DaggerStuck.cs" />
+    <Compile Include="DamageAdder.cs" />
     <Compile Include="DungPillar.cs" />
-    <Compile Include="LoadGO.cs" />
+    <Compile Include="OblobControl.cs" />
+    <Compile Include="SpecialAspid.cs" />
+    <Compile Include="TextureFilter.cs" />
+    <Compile Include="GOLoader.cs" />
+    <Compile Include="HallWaySaw.cs" />
     <Compile Include="LurkerFinder.cs" />
+    <Compile Include="MoveFloorSide.cs" />
+    <Compile Include="MoveFloorUp.cs" />
+    <Compile Include="ObjectFlinger.cs" />
     <Compile Include="PaleChampion.cs" />
     <Compile Include="PaleLurker.cs" />
-    <Compile Include="SawBladeMove.cs" />
-    <Compile Include="WavUtility.cs" />
+    <Compile Include="SawHandler.cs" />
+    <Compile Include="SpawnPillar.cs" />
+    <Compile Include="SpikeCollider.cs" />
+    <Compile Include="ThrowingSpike.cs" />
+    <Compile Include="WAV.cs" />
     <Compile Include="MusicLoad.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="assets\1wded.png" />
-    <EmbeddedResource Include="assets\2palelurker.png" />
-    <EmbeddedResource Include="assets\3saws.png" />
-    <EmbeddedResource Include="assets\4Lurker.png" />
-    <EmbeddedResource Include="assets\pLMus.wav" />
+    <EmbeddedResource Include="assets\0wded.png" />
+    <EmbeddedResource Include="assets\1palelurker.png" />
+    <EmbeddedResource Include="assets\2saws.png" />
+    <EmbeddedResource Include="assets\3Lurker.png" />
+    <EmbeddedResource Include="assets\4spike.png" />
+    <EmbeddedResource Include="assets\5bomb.png" />
+    <EmbeddedResource Include="assets\6bomb.png" />
+    <EmbeddedResource Include="assets\7PC.png" />
+    <EmbeddedResource Include="assets\8aspid.png" />
+    <EmbeddedResource Include="assets\9aspid.png" />
+    <EmbeddedResource Include="assets\10ob.png" />
+    <EmbeddedResource Include="assets\11id.png" />
+    <EmbeddedResource Include="assets\12id.png" />
+    <EmbeddedResource Include="assets\13id.png" />
+    <EmbeddedResource Include="assets\14id.png" />
+    <EmbeddedResource Include="assets\15id.png" />
+    <EmbeddedResource Include="assets\16d.png" />
+    <EmbeddedResource Include="assets\17d.png" />
+    <EmbeddedResource Include="assets\18d.png" />
+    <EmbeddedResource Include="assets\19d.png" />
+    <EmbeddedResource Include="assets\20d.png" />
+    <EmbeddedResource Include="assets\21d.png" />
+    <EmbeddedResource Include="assets\22j.png" />
+    <EmbeddedResource Include="assets\23j.png" />
+    <EmbeddedResource Include="assets\24j.png" />
+    <EmbeddedResource Include="assets\25j.png" />
+    <EmbeddedResource Include="assets\26j.png" />
+    <EmbeddedResource Include="assets\27t.png" />
+    <EmbeddedResource Include="assets\28t.png" />
+    <EmbeddedResource Include="assets\29t.png" />
+    <EmbeddedResource Include="assets\30t.png" />
+    <EmbeddedResource Include="assets\31t.png" />
+    <EmbeddedResource Include="assets\32t.png" />
+    <EmbeddedResource Include="assets\33t.png" />
+	<EmbeddedResource Include="assets\0p1S.wav" />
+    <EmbeddedResource Include="assets\1p1.wav" />
+    <EmbeddedResource Include="assets\2p2T.wav" />
+    <EmbeddedResource Include="assets\3p2.wav" />
+    <EmbeddedResource Include="assets\4p3.wav" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
       <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\Assembly-CSharp.dll</HintPath>
     </Reference>
+    <Reference Include="Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\Assembly-CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="Assembly-CSharp-firstpass, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
+    </Reference>
+    <Reference Include="AssetsTools.NET">
+      <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\AssetsTools.NET.dll</HintPath>
+    </Reference>
+    <Reference Include="ConditionalExpression">
+      <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\ConditionalExpression.dll</HintPath>
+    </Reference>
+    <Reference Include="GalaxyCSharp">
+      <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\GalaxyCSharp.dll</HintPath>
+    </Reference>
     <Reference Include="ModCommon">
       <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\Mods\ModCommon.dll</HintPath>
+    </Reference>
+    <Reference Include="Mono.Security">
+      <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\Mono.Security.dll</HintPath>
     </Reference>
     <Reference Include="PlayMaker">
       <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\PlayMaker.dll</HintPath>
     </Reference>
+    <Reference Include="PlayMaker, Version=1.6.0.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\PlayMaker.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
     <Reference Include="UnityEngine">
       <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\UnityEngine.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\UnityEngine.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.AssetBundleModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\UnityEngine.AssetBundleModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.AudioModule">
       <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\UnityEngine.AudioModule.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine.AudioModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\UnityEngine.AudioModule.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine.CoreModule">
+      <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
       <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.ImageConversionModule">
@@ -78,6 +163,16 @@
     </Reference>
     <Reference Include="UnityEngine.Physics2DModule">
       <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\UnityEngine.Physics2DModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.Physics2DModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\UnityEngine.Physics2DModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.PhysicsModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.PhysicsModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UI">
       <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\UnityEngine.UI.dll</HintPath>
