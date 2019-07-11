@@ -2,7 +2,7 @@
 Makes a few changes to the Pale Lurker miniboss and places her in the Hall of Gods.
     
 ## Special thanks to:  
-    Mino for animating the dash, jump, and oblobble riding movement.  
+    Mino for animating the dash, jump, and oblobble riding movement as well as the bomb and probably a few other things.  
     Mola for drawing the pale lurker statue.  
     56, KDT, Sid, and everyone in #modding for helping as always.  
     Zaliant for making the music.  
