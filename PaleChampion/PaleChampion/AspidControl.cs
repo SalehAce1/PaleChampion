@@ -21,40 +21,50 @@ namespace PaleChampion
     {
         private tk2dSpriteAnimator _anim;
         private PlayMakerFSM _oldCtrl;
+        private AudioSource _aud;
         public Vector2 _pos;
         public bool firing;
+        bool amAspid;
         GameObject otherAspid;
 
         void Awake()
         {
             Log("Apis start");
             _anim = gameObject.GetComponent<tk2dSpriteAnimator>();
-            _oldCtrl = gameObject.LocateMyFSM("spitter");
-            _oldCtrl.InsertMethod("Distance Fly", 0, KillFSM);
+            _aud = gameObject.GetComponent<AudioSource>();
+            if (gameObject.name.Contains("aspid"))
+            {
+                _oldCtrl = gameObject.LocateMyFSM("spitter");
+                _oldCtrl.InsertMethod("Distance Fly", 0, KillFSM);
+                amAspid = true;
+            }
+            else if (gameObject.name.Contains("obb"))
+            {
+                Destroy(gameObject.LocateMyFSM("Fatty Fly Attack"));
+                Destroy(gameObject.LocateMyFSM("fat fly bounce"));
+                StartCoroutine(ObbBrain());
+                StartCoroutine(Dodge());
+            }
         }
         void Start()
         {
             gameObject.GetComponent<BoxCollider2D>().isTrigger = true;
-            otherAspid = GameObject.Find("aspid" + (int.Parse(gameObject.name[gameObject.name.Length-1].ToString())^1));
             _pos = gameObject.transform.position;
+            if (amAspid)
+            {
+                otherAspid = GameObject.Find("enemyT aspid" + (int.Parse(gameObject.name[gameObject.name.Length - 1].ToString()) ^ 1)); ;
+            }
+            else gameObject.GetComponent<HealthManager>().hp = 200;
         }
         
         void FixedUpdate()
         {
             gameObject.transform.position = Vector2.MoveTowards(gameObject.transform.position, _pos, 35f * Time.deltaTime);
-            if (otherAspid == null && GameObject.Find("aspid" + (int.Parse(gameObject.name[gameObject.name.Length - 1].ToString()) ^ 1)) != null)
+            if ( amAspid && otherAspid == null && GameObject.Find("enemyT aspid" + (int.Parse(gameObject.name[gameObject.name.Length - 1].ToString()) ^ 1)) != null)
             {
-                otherAspid = GameObject.Find("aspid" + (int.Parse(gameObject.name[gameObject.name.Length - 1].ToString()) ^ 1));
+                otherAspid = GameObject.Find("enemyT aspid" + (int.Parse(gameObject.name[gameObject.name.Length - 1].ToString()) ^ 1));
                 Log("fixed otherasp");
             }
-        }
-        void KillFSM()
-        {
-            Log("Killing");
-            gameObject.LocateMyFSM("spitter").enabled = false;
-            StartCoroutine(FixedBrain());
-            StartCoroutine(Dodge());
-            Log("Killed");
         }
         IEnumerator Dodge()
         {
@@ -68,15 +78,78 @@ namespace PaleChampion
                     float distance = Mathf.Abs(HeroController.instance.transform.GetPositionY() - gameObject.transform.position.y);
                     if (distance < 1.5f)
                     {
-                        _pos.y -= dodgeBy;
-                        dodgeBy *= -1f;
+                        if (_pos.y + dodgeBy > 22f) _pos.y -= dodgeBy;
+                        else _pos.y += dodgeBy;
                         yield return new WaitForSeconds(1.2f);
                     }
                 }
                 yield return null;
             }
         }
-        IEnumerator FixedBrain()
+        public static List<GameObject> liveOrbs = new List<GameObject>();
+        IEnumerator ObbBrain()
+        {
+            yield return null;
+            float speed = 18f;
+            List<GameObject> bull = new List<GameObject>();
+            gameObject.GetComponent<Rigidbody2D>().isKinematic = true;
+            while (true)
+            {
+                if (liveOrbs.Count < 12)
+                {
+                    for (int i = 0; i < 4; i++)
+                    {
+                        _anim.Play("Attack");
+                        var spit = Instantiate(PaleChampion.preloadedGO["spit"]);
+                        spit.SetActive(true);
+                        spit.transform.SetPosition2D(gameObject.transform.GetPositionX(), gameObject.transform.GetPositionY());
+                        spit.AddComponent<Rigidbody2D>().gravityScale = 0f;
+                        spit.GetComponent<Rigidbody2D>().isKinematic = true;
+                        spit.layer = 12;
+                        spit.AddComponent<DamageHero>().enabled = true;
+                        spit.GetComponent<DamageHero>().damageDealt = 1;
+                        spit.GetComponent<BoxCollider2D>().isTrigger = true;
+                        bull.Add(spit);
+                        liveOrbs.Add(spit);
+                    }
+                    _anim.Play("Attack");
+                    yield return new WaitForSeconds(0.1f);
+                    float step = 45f;
+                    foreach (var i in bull)
+                    {
+                        float angle = step * Mathf.Deg2Rad;
+                        i.GetComponent<Rigidbody2D>().velocity = new Vector2(speed * Mathf.Cos(angle), speed * Mathf.Sin(angle));
+                        StartCoroutine(BlobBulletBrain(i));
+                        step += 90f;
+                        _aud.clip = GOLoader.spitAud;
+                        _aud.Play();
+                        yield return new WaitForSeconds(0.1f);
+                    }
+                    yield return new WaitWhile(() => _anim.IsPlaying("Attack"));
+                    bull.Clear();
+                    _anim.Play("Fly");
+                }
+                yield return new WaitForSeconds(1.5f);
+            }
+        }
+
+        IEnumerator BlobBulletBrain(GameObject go)
+        {
+            yield return new WaitForSeconds(0.2f);
+            go.AddComponent<HomingInfection>().centre = gameObject.transform;
+        }
+
+
+        void KillFSM()
+        {
+            Log("Killing");
+            _oldCtrl.enabled = false;
+            StartCoroutine(AspidBrain());
+            StartCoroutine(Dodge());
+            Log("Killed");
+        }
+
+        IEnumerator AspidBrain()
         {
             Log("Aspid mind begins");
             yield return new WaitWhile(() => _oldCtrl.enabled == true);
@@ -109,10 +182,12 @@ namespace PaleChampion
                     spit.GetComponent<DamageHero>().damageDealt = 1;
                     spit.GetComponent<BoxCollider2D>().isTrigger = true;
                     _anim.Play("Attack");
+                    _aud.clip = GOLoader.spitAud;
+                    _aud.Play();
                     num++;
-                    yield return new WaitForSeconds(0.05f);
+                    yield return null;
                     _anim.Play("Idle");
-                    if (!PaleLurker.setUpEnd) yield return new WaitForSeconds(0.05f);
+                    if (!PaleLurker.setUpEnd) yield return new WaitForSeconds(0.1f);
                     else yield return new WaitForSeconds(1.75f);
                 }
                 if (firing == true && !PaleLurker.setUpEnd) yield return new WaitForSeconds(2f);
@@ -125,7 +200,15 @@ namespace PaleChampion
         }
         void OnDestroy()
         {
-            firing = false;
+            if (amAspid) firing = false;
+            else
+            {
+                foreach (var i in liveOrbs)
+                {
+                    Destroy(i);
+                }
+                liveOrbs.Clear();
+            }
         }
         private static void Log(object obj)
         {

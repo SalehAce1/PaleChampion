@@ -23,6 +23,10 @@ namespace PaleChampion
         Texture _oldTexSpit;
         Texture _oldTexDung;
         Texture _oldTexOb;
+        public static AudioClip spitAud;
+        public static AudioClip pillAud;
+        public static AudioClip pillAud2;
+
         void Start()
         {
             StartCoroutine(LoadGO());
@@ -34,6 +38,8 @@ namespace PaleChampion
             PaleChampion.preloadedGO["platform"].SetActive(false);
             Logger.Log("Found platform");
 
+            PaleChampion.preloadedGO["spike"].AddComponent<TinkSound>();
+            PaleChampion.preloadedGO["spike"].AddComponent<SpikeFix>();
             DontDestroyOnLoad(PaleChampion.preloadedGO["spike"]);
             PaleChampion.preloadedGO["spike"].SetActive(false);
             Logger.Log("Found spike");
@@ -41,6 +47,7 @@ namespace PaleChampion
             _oldTexAsp = PaleChampion.preloadedGO["aspid"].GetComponent<tk2dSprite>().GetCurrentSpriteDef().material.mainTexture;
             PaleChampion.preloadedGO["aspid"].GetComponent<tk2dSprite>().GetCurrentSpriteDef().material.mainTexture = PaleChampion.SPRITES[8].texture;
             PaleChampion.preloadedGO["aspid"].AddComponent<AspidControl>();
+            spitAud = PaleChampion.preloadedGO["aspid"].LocateMyFSM("spitter").GetAction<AudioPlay>("Fire", 0).oneShotClip.Value as AudioClip;
             DontDestroyOnLoad(PaleChampion.preloadedGO["aspid"]);
             PaleChampion.preloadedGO["aspid"].SetActive(false);
             Logger.Log("Found aspid");
@@ -55,6 +62,10 @@ namespace PaleChampion
             PaleChampion.preloadedGO["cage"].SetActive(false);
             Logger.Log("Found cage");
 
+            DontDestroyOnLoad(PaleChampion.preloadedGO["cage obb"]);
+            PaleChampion.preloadedGO["cage obb"].SetActive(false);
+            Logger.Log("Found cage obb");
+
             Destroy(PaleChampion.preloadedGO["dung"].LocateMyFSM("Control"));
             DontDestroyOnLoad(PaleChampion.preloadedGO["dung"]);
             _oldTexDung = PaleChampion.preloadedGO["dung"].GetComponent<tk2dSprite>().GetCurrentSpriteDef().material.mainTexture;
@@ -63,7 +74,7 @@ namespace PaleChampion
             Logger.Log("Fixed dung spike");
 
             PaleChampion.preloadedGO["saw"].GetComponent<SpriteRenderer>().sprite.texture.LoadImage(PaleChampion.SPRITEBYTE[2]);
-            Destroy(PaleChampion.preloadedGO["saw"].GetComponent<TinkEffect>());
+            //Destroy(PaleChampion.preloadedGO["saw"].GetComponent<TinkEffect>());
             PaleChampion.preloadedGO["saw"].SetActive(false);
             DontDestroyOnLoad(PaleChampion.preloadedGO["saw"]);
             Logger.Log("Fixed saw");
@@ -129,6 +140,8 @@ namespace PaleChampion
                     Destroy(i);
                 }
             }
+            pillAud = PaleChampion.preloadedGO["flame"].LocateMyFSM("Control").GetAction<AudioPlaySimple>("Pillar", 1).oneShotClip.Value as AudioClip;
+            pillAud2 = PaleChampion.preloadedGO["flame"].LocateMyFSM("Control").GetAction<AudioPlayerOneShotSingle>("Shake", 2).audioClip.Value as AudioClip;
             DontDestroyOnLoad(PaleChampion.preloadedGO["pillar"]);
             PaleChampion.preloadedGO["pillar"].SetActive(false);
             Logger.Log("Fixed pillar");
@@ -225,8 +238,26 @@ namespace PaleChampion
             DontDestroyOnLoad(PaleChampion.preloadedGO["bomb"]);
             Logger.Log("Fixed bomb");
 
-            Logger.Log(Application.streamingAssetsPath);
-            AssetBundle ab = AssetBundle.LoadFromFile(Path.Combine(Application.streamingAssetsPath, "smoke"));
+            Logger.Log(SystemInfo.operatingSystem);
+            string assetName = "";
+            string assetName2 = "";
+            if (SystemInfo.operatingSystemFamily == OperatingSystemFamily.Windows)
+            {
+                assetName2 = "fire";
+                assetName = "smoke";
+            }
+            else if (SystemInfo.operatingSystemFamily == OperatingSystemFamily.MacOSX)
+            {
+                assetName2 = "fireMC";
+                assetName = "smokeMC";
+            }
+            else if (SystemInfo.operatingSystemFamily == OperatingSystemFamily.Linux)
+            {
+                assetName2 = "fireULin";
+                assetName = "smokeULin";
+            }
+            else Logger.Log("ERROR OS NOT SUPPORTED.");
+            AssetBundle ab = AssetBundle.LoadFromFile(Path.Combine(Application.streamingAssetsPath, assetName));
             GameObject[] go = ab.LoadAllAssets<GameObject>();
             PaleChampion.preloadedGO["smoke"] = Instantiate(go[0]);
             ab.Unload(false);
@@ -237,9 +268,41 @@ namespace PaleChampion
             PaleChampion.preloadedGO["smoke"].layer = 18;
             DontDestroyOnLoad(PaleChampion.preloadedGO["smoke"]);
             Logger.Log("Fixed smoke");
+
+            AssetBundle ab2 = AssetBundle.LoadFromFile(Path.Combine(Application.streamingAssetsPath, assetName2));
+            GameObject[] go2 = ab2.LoadAllAssets<GameObject>();
+            PaleChampion.preloadedGO["fire"] = Instantiate(go2[0]);
+            ab2.Unload(false);
+            PaleChampion.preloadedGO["fire"].SetActive(false);
+            PaleChampion.preloadedGO["fire"].layer = 18;
+
+            ParticleSystem.CollisionModule collision = PaleChampion.preloadedGO["fire"].transform.GetChild(0).GetComponent<ParticleSystem>().collision;
+            collision.type = ParticleSystemCollisionType.World;
+            collision.sendCollisionMessages = true;
+            collision.mode = ParticleSystemCollisionMode.Collision2D;
+            collision.enabled = true;
+            collision.quality = ParticleSystemCollisionQuality.High;
+            collision.maxCollisionShapes = 256;
+            collision.dampenMultiplier = 0;
+            collision.radiusScale = .3f;
+            collision.collidesWith = 1 << 9;
+
+            DontDestroyOnLoad(PaleChampion.preloadedGO["fire"]);
+            Logger.Log("Fixed fire");
+
+            PaleChampion.preloadedGO["music box"] = new GameObject("music box");
+            GameObject bg = new GameObject("bg music");
+            bg.AddComponent<AudioSource>();
+            PaleChampion.preloadedGO["music box"].AddComponent<AudioSource>();
+            bg.transform.parent = PaleChampion.preloadedGO["music box"].transform;
+            DontDestroyOnLoad(PaleChampion.preloadedGO["music box"]);
+            DontDestroyOnLoad(bg);
+            PaleChampion.preloadedGO["music box"].SetActive(false);
+            Logger.Log("Fixed music box");
         }
         private void OnDestroy()
         {
+            Logger.Log("Dead Tex");
             PaleChampion.preloadedGO["dung"].GetComponent<tk2dSprite>().GetCurrentSpriteDef().material.mainTexture = _oldTexDung;
             PaleChampion.preloadedGO["ob"].GetComponent<tk2dSprite>().GetCurrentSpriteDef().material.mainTexture = _oldTexOb;
             PaleChampion.preloadedGO["aspid"].GetComponent<tk2dSprite>().GetCurrentSpriteDef().material.mainTexture = _oldTexAsp;

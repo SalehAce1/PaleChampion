@@ -39,8 +39,11 @@
     <Compile Include="DaggerStuck.cs" />
     <Compile Include="DamageAdder.cs" />
     <Compile Include="DungPillar.cs" />
+    <Compile Include="FlameEnder.cs" />
+    <Compile Include="HomingInfection.cs" />
     <Compile Include="OblobControl.cs" />
-    <Compile Include="SpecialAspid.cs" />
+    <Compile Include="SaveSettings.cs" />
+    <Compile Include="SpikeFix.cs" />
     <Compile Include="TextureFilter.cs" />
     <Compile Include="GOLoader.cs" />
     <Compile Include="HallWaySaw.cs" />
@@ -54,6 +57,7 @@
     <Compile Include="SpawnPillar.cs" />
     <Compile Include="SpikeCollider.cs" />
     <Compile Include="ThrowingSpike.cs" />
+    <Compile Include="TinkSound.cs" />
     <Compile Include="WAV.cs" />
     <Compile Include="MusicLoad.cs" />
   </ItemGroup>
@@ -92,7 +96,7 @@
     <EmbeddedResource Include="assets\31t.png" />
     <EmbeddedResource Include="assets\32t.png" />
     <EmbeddedResource Include="assets\33t.png" />
-	<EmbeddedResource Include="assets\0p1S.wav" />
+    <EmbeddedResource Include="assets\0p1S.wav" />
     <EmbeddedResource Include="assets\1p1.wav" />
     <EmbeddedResource Include="assets\2p2T.wav" />
     <EmbeddedResource Include="assets\3p2.wav" />
@@ -158,6 +162,10 @@
     <Reference Include="UnityEngine.IMGUIModule">
       <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine.JSONSerializeModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\UnityEngine.JSONSerializeModule.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine.ParticleSystemModule">
       <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\UnityEngine.ParticleSystemModule.dll</HintPath>
     </Reference>
@@ -174,9 +182,11 @@
     <Reference Include="UnityEngine.PhysicsModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
       <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null" />
     <Reference Include="UnityEngine.UI">
       <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\UnityEngine.UI.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine.UIModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null" />
   </ItemGroup>
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Exec Command="@echo on" />

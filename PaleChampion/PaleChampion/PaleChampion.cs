@@ -1,22 +1,21 @@
-﻿using System.Collections.Generic;
-using System.Collections;
+﻿using System;
 using System.Diagnostics;
-using System.IO;
 using System.Reflection;
-using JetBrains.Annotations;
 using Modding;
-using UnityEngine;
-using UnityEngine.SceneManagement;
-using UObject = UnityEngine.Object;
-using USceneManager = UnityEngine.SceneManagement.SceneManager;
-using HutongGames.PlayMaker.Actions;
-using ModCommon.Util;
+using JetBrains.Annotations;
 using ModCommon;
+using MonoMod.RuntimeDetour;
+using UnityEngine.SceneManagement;
+using UnityEngine;
+using USceneManager = UnityEngine.SceneManagement.SceneManager;
+using UObject = UnityEngine.Object;
+using System.Collections.Generic;
+using System.IO;
 
 namespace PaleChampion
 {
     [UsedImplicitly]
-    public class PaleChampion : Mod, ITogglableMod
+    public class PaleChampion : Mod<SaveSettings>, ITogglableMod
     {
         public static Dictionary<string, GameObject> preloadedGO = new Dictionary<string, GameObject>();
         public static Texture _oldTexAsp;
@@ -29,6 +28,10 @@ namespace PaleChampion
         public static readonly List<Sprite> SPRITES = new List<Sprite>();
         public static readonly List<byte[]> SPRITEBYTE = new List<byte[]>();
 
+        public override string GetVersion()
+        {
+            return "1.1.0.0";
+        }
 
         public override List<(string, string)> GetPreloadNames()
         {
@@ -39,12 +42,14 @@ namespace PaleChampion
                 ("Room_Colosseum_Bronze", "Colosseum Manager/Waves/Arena 8/Colosseum Platform (1)"),
                 ("Room_Colosseum_Bronze", "Colosseum Manager/Waves/Wave 7/Colosseum Cage Small"),
                 ("Room_Colosseum_Bronze", "Colosseum Manager/Ground Spikes/Colosseum Spike"),
+                ("Room_Colosseum_Silver", "Colosseum Manager/Waves/Wave 26 Obble/Colosseum Cage Small (1)"),
                 ("GG_White_Defender", "White Defender/Slam Pillars/Dung Pillar (1)"),
                 ("White_Palace_07", "wp_saw (30)"),
                 ("White_Palace_07", "wp_trap_spikes (2)"),
                 ("GG_Lurker", "Lurker Control/Pale Lurker"),
                 ("GG_Lurker", "Lurker Control/Lurker Barb"),
                 ("Grimm_Nightmare","Grimm_flare_pillar (1)/Pillar"),
+                ("Grimm_Nightmare","Grimm_flare_pillar (1)"),
                 ("GG_Oblobbles","Mega Fat Bee"),
             };
         }
@@ -52,11 +57,13 @@ namespace PaleChampion
         public override void Initialize(Dictionary<string, Dictionary<string, GameObject>> preloadedObjects)
         {
             Log("Storing GOs");
+            preloadedGO.Add("flame", preloadedObjects["Grimm_Nightmare"]["Grimm_flare_pillar (1)"]);
             preloadedGO.Add("aspid", preloadedObjects["Room_Colosseum_Bronze"]["Super Spitter Col(Clone)"]);
             preloadedGO.Add("spit", preloadedObjects["Room_Colosseum_Bronze"]["Colosseum Manager/Sprite Cache/Spitter Shot R"]);
             preloadedGO.Add("platform", preloadedObjects["Room_Colosseum_Bronze"]["Colosseum Manager/Waves/Arena 8/Colosseum Platform (1)"]);
             preloadedGO.Add("cage", preloadedObjects["Room_Colosseum_Bronze"]["Colosseum Manager/Waves/Wave 7/Colosseum Cage Small"]);
             preloadedGO.Add("spike", preloadedObjects["Room_Colosseum_Bronze"]["Colosseum Manager/Ground Spikes/Colosseum Spike"]);
+            preloadedGO.Add("cage obb", preloadedObjects["Room_Colosseum_Silver"]["Colosseum Manager/Waves/Wave 26 Obble/Colosseum Cage Small (1)"]);
             preloadedGO.Add("dung", preloadedObjects["GG_White_Defender"]["White Defender/Slam Pillars/Dung Pillar (1)"]);
             preloadedGO.Add("saw", preloadedObjects["White_Palace_07"]["wp_saw (30)"]);
             preloadedGO.Add("wp spike", preloadedObjects["White_Palace_07"]["wp_trap_spikes (2)"]);
@@ -65,14 +72,20 @@ namespace PaleChampion
             preloadedGO.Add("pillar", preloadedObjects["Grimm_Nightmare"]["Grimm_flare_pillar (1)/Pillar"]);
             preloadedGO.Add("bomb", null);
             preloadedGO.Add("smoke", null);
+            preloadedGO.Add("fire", null);
             preloadedGO.Add("lurker2", null);
+            preloadedGO.Add("music box", null);
             preloadedGO.Add("ob", preloadedObjects["GG_Oblobbles"]["Mega Fat Bee"]);
             Instance = this;
             Log("Initalizing.");
+
+            Unload();
             ModHooks.Instance.AfterSavegameLoadHook += AfterSaveGameLoad;
             ModHooks.Instance.NewGameHook += AddComponent;
             ModHooks.Instance.LanguageGetHook += LangGet;
             USceneManager.activeSceneChanged += LastScene;
+            ModHooks.Instance.SetPlayerVariableHook += SetVariableHook;
+            ModHooks.Instance.GetPlayerVariableHook += GetVariableHook;
             int ind = 0;
             Assembly asm = Assembly.GetExecutingAssembly();
             MusicLoad.LoadAssets.LoadWavFile();
@@ -82,7 +95,7 @@ namespace PaleChampion
                 {
                     continue;
                 }
-
+                
                 using (Stream s = asm.GetManifestResourceStream(res))
                 {
                     if (s == null) continue;
@@ -101,7 +114,6 @@ namespace PaleChampion
                     Log("Created sprite from embedded image: " + res + " at ind " + ++ind);
                 }
             }
-            GameManager.instance.gameObject.AddComponent<GOLoader>();
         }
         
         private void LastScene(Scene arg0, Scene arg1) => _lastScene = arg0.name;
@@ -114,7 +126,7 @@ namespace PaleChampion
                 case "LURKER_2": return "...Power... not stronger but distinct...";
                 case "LURKER_3": return "...The Blackwyrm's resonance... faint, only memory here... ?";
                 case "LURKER_NAME": return "Pale Champion";
-                case "LURKER_DESC": return "Lost memory of the King's great champion.";
+                case "LURKER_DESC": return "Zealous god of the Colosseum."; //
                 case "OBLOBBLES_MAIN": return "Pale Champion";
                 case "GODSEEKER_RADIANCE_STATUE": return "Those great Knights challenged the Blackwyrm, and by defeating it revealed its followers as Fools.<br><page>If death can claim such an ancient thing, then what of our King? Though regarded as deity, could he fail us also?";
                 default: return Language.Language.GetInternal(key, sheettitle);
@@ -125,15 +137,36 @@ namespace PaleChampion
 
         private void AddComponent()
         {
+            Log("Add component1");
+            GameManager.instance.gameObject.AddComponent<GOLoader>();
             GameManager.instance.gameObject.AddComponent<LurkerFinder>();
+            Log("Add component2");
+        }
+
+        private object SetVariableHook(Type t, string key, object obj)
+        {
+            if (key == "lurkerDaddy")
+                Settings.Completion = (BossStatue.Completion)obj;
+            return obj;
+        }
+
+        private object GetVariableHook(Type t, string key, object orig)
+        {
+            return key == "lurkerDaddy"
+                ? Settings.Completion
+                : orig;
         }
 
         public void Unload()
         {
+            AudioListener.volume = 1f;
+            AudioListener.pause = false;
             ModHooks.Instance.AfterSavegameLoadHook -= AfterSaveGameLoad;
             ModHooks.Instance.NewGameHook -= AddComponent;
             ModHooks.Instance.LanguageGetHook -= LangGet;
             USceneManager.activeSceneChanged -= LastScene;
+            ModHooks.Instance.SetPlayerVariableHook -= SetVariableHook;
+            ModHooks.Instance.GetPlayerVariableHook -= GetVariableHook;
 
             // ReSharper disable once Unity.NoNullPropogation
             var x = GameManager.instance?.gameObject.GetComponent<LurkerFinder>();

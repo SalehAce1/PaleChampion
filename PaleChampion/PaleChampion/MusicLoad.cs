@@ -39,6 +39,7 @@ namespace PaleChampion
                             WAV mus = new WAV(buffer);
                             AudioClip audioClip = AudioClip.Create(res, mus.SampleCount, 1, mus.Frequency, false);
                             audioClip.SetData(mus.LeftChannel, 0);
+                            audioClip.SetData(mus.RightChannel, 0);
                             //audioClip.SetData(mus.RightChannel, 0);
                             music.Add(audioClip);
                         }

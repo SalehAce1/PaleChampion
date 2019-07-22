@@ -64,11 +64,11 @@ namespace PaleChampion
         }
         IEnumerator BasicMove2()
         {
-            gameObject.GetComponent<HealthManager>().hp = 800;
+            gameObject.GetComponent<HealthManager>().hp = 900;
             while (!end)
             {
                 _recoil.enabled = true;
-                Vector2 randomPos = new Vector2(UnityEngine.Random.Range(90f, 114f), UnityEngine.Random.Range(7f, 18f));
+                Vector2 randomPos = new Vector2(UnityEngine.Random.Range(90f, 114f), UnityEngine.Random.Range(7f, 15.7f));
                 float speed = 12f;
                 var lc = gameObject.transform.localScale;
                 if (gameObject.transform.GetPositionX() - randomPos.x > 0)

@@ -29,8 +29,16 @@ namespace PaleChampion
         }
         private void OnTriggerEnter2D(Collider2D coll)
         {
-            if (!done && (coll.gameObject.name.Contains("dank")|| coll.gameObject.layer == 8))
+            if (!done && (coll.gameObject.name.Contains("dank") || coll.gameObject.layer == 8) && !coll.gameObject.name.Contains("not"))
             {
+                float sign = Mathf.Sign(105f - gameObject.transform.GetPositionX());
+                if (gameObject.transform.GetPositionY() > 6.3f && coll.gameObject.layer == 8 && !coll.gameObject.name.ToLower().Contains("plat"))
+                {
+                    Log("Bounce " + coll.gameObject.name);
+                    Destroy(gameObject);
+                    //gameObject.transform.parent.gameObject.GetComponent<Rigidbody2D>().velocity = new Vector2(sign * 50f, gameObject.GetComponent<Rigidbody2D>().velocity.y);
+                    return;
+                }
                 StartCoroutine(gameObject.transform.parent.gameObject.GetComponent<SpawnPillar>().DestroyBomb());
                 done = true;
             }

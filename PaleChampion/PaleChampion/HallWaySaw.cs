@@ -33,18 +33,6 @@ namespace PaleChampion
         IEnumerator SawRun()
         {
             rb.velocity = new Vector2(0f, -1f * direction * 12f);
-            /* while (true)
-             {
-                 UnityEngine.Random.InitState((int)(origPos.x + origPos.y));
-                 int rand = UnityEngine.Random.Range(0, 10);
-                 if (rand == 0)
-                 {
-                     rb.velocity = new Vector2(0f, -1f * direction * 10f);
-                     break;
-                 }
-                 yield return new WaitForSeconds(1f);
-             }
-             */
             while (true)
             {
                 Vector2 pos = gameObject.transform.position;

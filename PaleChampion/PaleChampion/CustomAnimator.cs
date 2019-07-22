@@ -57,7 +57,7 @@ namespace PaleChampion
         {
             while (gameObject.activeSelf)
             {
-                gameObject.transform.SetPosition2D(go.transform.position);
+                gameObject.transform.SetPosition2D(go.transform.position.x, go.transform.position.y-0.5f);
                 yield return null;
             }
         }

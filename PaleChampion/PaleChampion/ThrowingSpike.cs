@@ -23,7 +23,6 @@ namespace PaleChampion
         private int myInd = 0;
         void Start()
         {
-            //gameObject.AddComponent<DebugColliders>();
             initPoint = gameObject.transform.position;
             PaleLurker.allDagStartPos.Add(initPoint);
             myInd = PaleLurker.allDagStartPos.IndexOf(initPoint);
@@ -49,28 +48,24 @@ namespace PaleChampion
             if (gameObject.transform.GetPositionY() < 5.7f && !_once)
             {
                 _once = true;
+                gameObject.GetComponent<BoxCollider2D>().enabled = false;
                 gameObject.GetComponent<Rigidbody2D>().velocity = new Vector2(0f, 0f);
             }
             if (_timeLive > 5f && gameObject.GetComponent<Rigidbody2D>().velocity != Vector2.zero)
             {
-                Log("Kill my boi");
                 PaleLurker.allDagStartPos.RemoveAt(myInd);
                 Destroy(gameObject);
             }
             _timeLive += Time.fixedDeltaTime;
         }
-        void OnCollisionEnter2D(Collision2D other)
-        {
-            
-        }
         void OnTriggerEnter2D(Collider2D col)
         {
             if (col.name == "Chunk 0 3" || col.name == "Floor Saver") //col.gameObject.layer == 8 && _timeLive > 0.5f)//
             {
-                Log(col.gameObject.name);
                 PaleLurker.allDagEndPos[PaleLurker._temp] = gameObject.transform.position;
                 PaleLurker._temp++;
                 gameObject.GetComponent<Rigidbody2D>().velocity = new Vector2(0f, 0f);
+                gameObject.GetComponent<BoxCollider2D>().enabled = false;
             }
         }
         private static void Log(object obj)

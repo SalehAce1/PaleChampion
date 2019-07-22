@@ -26,7 +26,7 @@ namespace PaleChampion
         }
         private void OnTriggerEnter2D(Collider2D coll)
         {
-            if (coll.gameObject.layer == 8 && t > 0.1f)
+            if (coll.gameObject.layer == 8 && t > 0.15f)
             {
                 gameObject.GetComponent<Rigidbody2D>().velocity = new Vector2(0f, 0f);
                 gameObject.GetComponent<BoxCollider2D>().enabled = false;

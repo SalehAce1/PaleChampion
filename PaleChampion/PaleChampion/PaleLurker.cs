@@ -16,6 +16,7 @@ using System;
 using On;
 using GlobalEnums;
 using UnityEngine.SceneManagement;
+using UnityEngine.Audio;
 
 namespace PaleChampion
 {
@@ -36,7 +37,10 @@ namespace PaleChampion
         public static int hits = 0;
         public GameObject[] lurkerBarbs = new GameObject[5];
         Texture oldPLTex;
+        Recoil _rc;
         private PlayMakerFSM dreamNail;
+        private Text endingTxt;
+        private GameObject canvas;
         private string[] HeroAttacks = { "Slash", "DownSlash", "UpSlash", "Fireball2 Spiral(Clone)", "Sharp Shadow",
                                          "Hit R", "Hit L", "Hit U", "Q Fall Damage", "Great Slash", "Dash Slash" };
         public static Vector2[] allDagEndPos = new Vector2[33];
@@ -53,12 +57,22 @@ namespace PaleChampion
             _anim = gameObject.GetComponent<tk2dSpriteAnimator>();
             _rgbd = gameObject.GetComponent<Rigidbody2D>();
             _bCol = gameObject.GetComponent<BoxCollider2D>();
+            _rc = gameObject.GetComponent<Recoil>();
             dreamNail = HeroController.instance.gameObject.LocateMyFSM("Dream Nail");
         }
         private void Start()
         {
             try
             {
+                ModHooks.Instance.TakeHealthHook += TookDamge;
+
+                setUpEnd = false;
+                _temp = 0;
+                platPhaseEnd = false;
+                allDagEndPos = new Vector2[33];
+                allDagStartPos = new List<Vector2>();
+                _allSpikes = new GameObject[25];
+
                 oldPLTex = gameObject.GetComponent<tk2dSprite>().GetCurrentSpriteDef().material.mainTexture;
                 gameObject.GetComponent<tk2dSprite>().GetCurrentSpriteDef().material.mainTexture = PaleChampion.SPRITES[3].texture;
                 Log("Setting health");
@@ -79,7 +93,6 @@ namespace PaleChampion
 
             try
             {
-                USceneManager.activeSceneChanged += SceneChanged;
 
                 Log("Make Lurker follow you");
                 _control.InsertMethod(" Hop", 6, VelocitySetter);
@@ -106,7 +119,7 @@ namespace PaleChampion
 
                 Log("Throw barbs in a spread");
                 _control.RemoveAction("Wallbarb", 3);
-                _control.InsertCoroutine("Wallbarb", 0, ThrowTrap);
+                _control.InsertCoroutine("Wallbarb", 3, ThrowTrap);
 
                 Log("High Jump State");
                 _control.CopyState("Musix", "High Jump");
@@ -114,9 +127,9 @@ namespace PaleChampion
                 _control.InsertCoroutine("High Jump", 0, WaitingJump);
                 _control.RemoveTransition("High Jump", "FINISHED");
                 _control.AddTransition("High Jump", "JUMPDONE", "Idle");
-
                 Log("Fix dig after intial digout");
                 StartCoroutine(FixDig());
+                StartCoroutine(MusicHandler());
 
             }
             catch (Exception e)
@@ -133,17 +146,25 @@ namespace PaleChampion
             anim.animations.Add("jump", PaleChampion.SPRITES.GetRange(22, 5));
             anim.animations.Add("throw", PaleChampion.SPRITES.GetRange(27, 7));
             StartCoroutine(OblobPhase());
+            StartCoroutine(RecoilMan());
         }
 
-        private void SceneChanged(Scene arg0, Scene arg1)
+        private IEnumerator RecoilMan()
         {
-            if (arg0.name == "GG_Oblobbles" && arg1.name == "GG_Workshop")
+            while (!phase2)
             {
-                Log("die");
-                USceneManager.activeSceneChanged -= SceneChanged;
-                gameObject.GetComponent<tk2dSprite>().GetCurrentSpriteDef().material.mainTexture = oldPLTex;
-                Destroy(gameObject.GetComponent<PaleLurker>());
+                _rc.enabled = true;
+                _rc.SetRecoilSpeed(10f);
+                yield return null;
             }
+            _rc.enabled = false;
+        }
+
+        bool tookdmg;
+        private int TookDamge(int damage)
+        {
+            tookdmg = true;
+            return damage;
         }
 
         private void AfterPlayerDied()
@@ -151,17 +172,17 @@ namespace PaleChampion
             Log("pog");
             Destroy(gameObject);
         }
-
+        int oldHp = 1800;
         void OnTriggerEnter2D(Collider2D col)
         {
-            //Needs fluke, elegy, and more
-            if (HeroAttacks.Contains(col.name))
+            if (oldHp > _hm.hp)//(col.gameObject.layer == 17 || col.gameObject.layer == 15) && col.gameObject.GetComponent<DamageHero>() == null)//HeroAttacks.Contains(col.name))
             {
                 if (!phase2 && !evading)
                 {
                     hits++;
                 }
                 else if (phase2) hits++;
+                oldHp = _hm.hp;
             }
             if (col.name == "Colosseum Spike(Clone)(Clone)")
             {
@@ -208,24 +229,81 @@ namespace PaleChampion
             _control.RemoveTransition("Teleport", "FINISHED");
             _control.SetState("Dig 1");
 
-            while (true)
-            {
-                try
-                {
-                    Log("Start MUSIC");
-                    gameObject.GetComponent<AudioSource>().clip = MusicLoad.LoadAssets.music[1];
-                    gameObject.GetComponent<AudioSource>().Play();
-
-                }
-                catch (Exception e)
-                {
-                    Log(e);
-                }
-                yield return new WaitForSeconds(5f);
-            }
-
             // _control.InsertCoroutine("Teleport", 1, Phase2);
             // phase2 = true;
+        }
+
+        IEnumerator MusicHandler()
+        {
+            StartCoroutine(MusPauseHand());
+            AudioSource _audMain = PaleChampion.preloadedGO["music box"].GetComponent<AudioSource>();
+            GameObject bg = PaleChampion.preloadedGO["music box"].transform.Find("bg music").gameObject;
+            AudioSource _audBG = bg.GetComponent<AudioSource>();
+            PaleChampion.preloadedGO["music box"].SetActive(true);
+            bg.SetActive(true);
+            PaleChampion.preloadedGO["music box"].transform.SetPosition2D(105f, 15f);
+
+            _audMain.bypassEffects = true;
+            _audMain.bypassReverbZones = true;
+            _audMain.bypassListenerEffects = true;
+
+            _audBG.bypassEffects = true;
+            _audBG.bypassReverbZones = true;
+            _audBG.bypassListenerEffects = true;
+
+            _audMain.volume = 1;
+            _audBG.volume = 1;
+            _audMain.loop = true;
+            _audBG.loop = false;
+            _audBG.clip = MusicLoad.LoadAssets.music[0];
+            _audMain.clip = MusicLoad.LoadAssets.music[1];
+            _audBG.Play();
+            yield return new WaitForSeconds(1.04f);
+
+            _audMain.Play();
+            while (!phase2Mus) yield return null;
+            _audMain.Stop();
+
+            _audBG.clip = MusicLoad.LoadAssets.music[2];
+            _audMain.clip = MusicLoad.LoadAssets.music[3];
+            _audBG.Play();
+            yield return new WaitForSeconds(1.04f);
+
+            _audMain.Play();
+            while (!epicMusTime) yield return null;
+            _audMain.Stop();
+
+            _audMain.clip = MusicLoad.LoadAssets.music[4];
+            _audMain.Play();
+        }
+        IEnumerator MusPauseHand()
+        {
+            while(true)
+            {
+                if (tookdmg && !GameManager.instance.isPaused)
+                {
+                    tookdmg = false;
+                    for (float i = 1f; i > 0.2f; i-=0.1f)
+                    {
+                        AudioListener.volume = i;
+                        yield return null;
+                    }
+                    yield return new WaitForSeconds(1.5f);
+                    for (float i = 0.2f; i <= 1f; i += 0.1f)
+                    {
+                        AudioListener.volume = i;
+                        yield return null;
+                    }
+                    yield return new WaitForSeconds(0.5f);
+                }
+                if (GameManager.instance.isPaused)
+                {
+                    AudioListener.volume = 0.2f;
+                    yield return new WaitWhile(() => GameManager.instance.isPaused);
+                    AudioListener.volume = 1f;
+                }
+                yield return null;
+            }
         }
 
         public void VelocitySetter() //Set hop power
@@ -292,19 +370,22 @@ namespace PaleChampion
         bool dashed;
         IEnumerator Evade() //Tells lurker to dig/dash when hit and controls parts of phase 1
         {
+            _rc.enabled = true;
             if (hits > 0)
             {
+                //_rc.enabled = false;
                 Log("evade");
-                evading = true;
+                //evading = true;
                 hits = 0;
                 p1Max = 5;
                 if (_hm.hp < 1400)
                 {
                     _control.InsertCoroutine("Teleport", 1, Phase2);
                     phase2 = true;
+                    _rc.enabled = false;
                 }
 
-                if (UnityEngine.Random.Range(0,3)==0)
+                if (UnityEngine.Random.Range(0, 3) == 0)
                 {
                     dashed = true;
                     lurker2.SetActive(true);
@@ -336,6 +417,7 @@ namespace PaleChampion
                 }
                 _control.SetState("Dig 1");
             }
+            else if (!_rc.enabled) _rc.enabled = true;
             yield return new WaitForSeconds(3f);
             evading = false;
         }
@@ -424,6 +506,7 @@ namespace PaleChampion
         }
         IEnumerator ThrowTrap() //Throw barbs that can move in later parts of P1
         {
+            _control.enabled = false;
             Log("throw");
             int throwN = 4;
             if (p1Max == 5) throwN = 3;
@@ -441,6 +524,10 @@ namespace PaleChampion
                 Log("thjrown");
             }
             yield return null;
+            _anim.Play("Throw");
+            yield return null;
+            _control.enabled = true;
+            _control.SetState("Walljump Antic");
         }
 
         IEnumerator BarbMovement(GameObject barb) //Control barb movement
@@ -448,19 +535,19 @@ namespace PaleChampion
             var barbCtrl = barb.LocateMyFSM("Control");
             Log("wait");
             yield return new WaitWhile(() => barbCtrl.ActiveStateName != "Spike Up");
-            var origY = barb.transform.GetPositionY();
+            //var origY = barb.transform.GetPositionY();
             var dir = Mathf.Sign(HeroController.instance.transform.GetPositionX() - barb.transform.GetPositionX());
             barb.GetComponent<Rigidbody2D>().velocity = new Vector2(dir * 13f, 0f);
             while (barb!=null)
             {
-                barb.transform.Rotate(Vector3.forward * 15 * dir);
+                barb.transform.Rotate(Vector3.forward * 3000 * dir * Time.deltaTime);
+                barb.GetComponent<Rigidbody2D>().gravityScale = 2f;
                 if (barb.transform.GetPositionX() > 119.2f || barb.transform.GetPositionX() < 85.8f)
                 {
                     dir *= -1f;
                     barb.GetComponent<Rigidbody2D>().velocity = new Vector2(dir * 13f, 0f);
                     yield return new WaitForSeconds(0.5f);
                 }
-                barb.transform.SetPositionY(origY);
                 canThrowSpike = true;
                 yield return null;
             }
@@ -469,21 +556,12 @@ namespace PaleChampion
 
         bool phase2;
         bool retractSpikes1 = true;
-
+        bool phase2Mus;
         private IEnumerator Phase2() //Start phase 2
         {
             Log("Start Phase 2");
             yield return null;
             _control.enabled = false;
-            setUpEnd = false;
-            _temp = 0;
-            platPhaseEnd = false;
-            allDagEndPos = new Vector2[33];
-            allDagStartPos = new List<Vector2>();
-            
-            _allSpikes = new GameObject[25];
-
-
             StartCoroutine(GoToWall1());
         }
 
@@ -576,9 +654,12 @@ namespace PaleChampion
         private IEnumerator JumpNEnemySpawn3() //Roar, enemy spawn: aspid, homing obble, squit. Go to left wall./////////////////////////////////////////////////////////////////
         {
             Log("Start Spin");
+            phase2Mus = true;
             _anim.Play("Slash Antic");
             var pos = gameObject.transform.position;
-            StartCoroutine(EnemyTrial(pos.x, pos.y));
+            AspidControl.liveOrbs.Clear();
+            StartCoroutine(AspidTrial(pos.x, pos.y));
+            //StartCoroutine(BlobTrial(105f,17f));
             yield return new WaitForSeconds(0.4f);
             _anim.Play("Slash Antic");
             yield return new WaitForSeconds(0.4f);
@@ -625,6 +706,7 @@ namespace PaleChampion
             _rgbd.gravityScale = 0f;
             _rgbd.velocity = new Vector2(0f, 0f);
             _rgbd.isKinematic = true;
+            _hm.hp = 1450;
             while (_hm.hp > 1200)
             {
                 for (int t = 0; t < 3; t++)
@@ -647,11 +729,14 @@ namespace PaleChampion
                     yield return new WaitWhile(() => _anim.IsPlaying("Throw"));
                     _anim.Play("Wall Cling");
                     yield return new WaitWhile(() => _anim.IsPlaying("Wall Cling"));
-                    yield return new WaitForSeconds(3f);
+                    if (Vector2.Distance(HeroController.instance.transform.position, gameObject.transform.position) < 8f) break;
+                    yield return new WaitForSeconds(1.5f);
+                    if (Vector2.Distance(HeroController.instance.transform.position, gameObject.transform.position) < 8f) break;
                 }
                 Vector2 newPos = new Vector2();
-                if (leftOrRight > 0) newPos = new Vector2(119.5f, 15.5f);
-                else newPos = new Vector2(85.5f, 15.5f);
+                float yPos = UnityEngine.Random.Range(9f,19f);
+                if (leftOrRight > 0) newPos = new Vector2(119.5f, yPos); //15.5
+                else newPos = new Vector2(85.5f, yPos);
                 gameObject.transform.SetRotation2D(-90f * leftOrRight);
                 _anim.Play("DigIn 1");
                 yield return new WaitWhile(() => _anim.IsPlaying("DigIn 1"));
@@ -688,10 +773,15 @@ namespace PaleChampion
             yield return new WaitForSeconds(0.5f);
             StartCoroutine(WiredDaggThrow4());
         }
+        List<Vector2> flameL = new List<Vector2>();
+        List<Vector2> flameR = new List<Vector2>();
+        List<Vector2> flameU = new List<Vector2>();
+
         private IEnumerator WiredDaggThrow4() //Set up wire dag on all sides
         {
             Log("Start saw attack");
             _rgbd.isKinematic = false;
+            renewEnem = true;
             var initY = gameObject.transform.GetPositionY();
             while (gameObject.transform.GetPositionY() >= 7.5f)
             {
@@ -699,6 +789,8 @@ namespace PaleChampion
                 var a = Instantiate(PaleChampion.preloadedGO["wp spike"]);
                 a.transform.SetPosition2D(85.5f, gameObject.transform.GetPositionY());
                 a.SetActive(true);
+                flameL.Add(a.transform.position);
+                flameR.Add(new Vector2(119.5f,a.transform.GetPositionY()));
                 a.AddComponent<ThrowingSpike>();
                 yield return new WaitWhile(() => _anim.IsPlaying("Throw"));
                 _anim.Play("Wall Cling");
@@ -736,6 +828,7 @@ namespace PaleChampion
                     a.transform.SetPosition2D(gameObject.transform.GetPositionX(), gameObject.transform.GetPositionY());
                     a.transform.SetRotation2D(-90f);
                     a.SetActive(true);
+                    flameU.Add(a.transform.position);
                     a.AddComponent<ThrowingSpike>(); 
                 }
                 _rgbd.velocity = new Vector2(5f, 0f);
@@ -744,6 +837,7 @@ namespace PaleChampion
             }
             yield return new WaitForSeconds(1f);
             gameObject.transform.SetPosition2D(102.5f, gameObject.transform.position.y);
+            flameU.Insert(flameU.Count / 2, gameObject.transform.position);
             for (float i = 190f, k = 350f; i <= 270f; i += 10f, k -= 10f)
             {
                 var a = Instantiate(PaleChampion.preloadedGO["wp spike"]);
@@ -763,6 +857,7 @@ namespace PaleChampion
             yield return new WaitForSeconds(1f);
             StartCoroutine(SetUpSawPhase5());
         }
+
         public static bool FastApproximately(float a, float b, float threshold)
         {
             return ((a - b) < 0 ? ((a - b) * -1) : (a - b)) <= threshold;
@@ -770,6 +865,7 @@ namespace PaleChampion
         private List<Vector2> allSawPos = new List<Vector2>();
         private List<GameObject> allUpperPlat = new List<GameObject>();
         private List<GameObject> allUpperSpike = new List<GameObject>();
+
         private IEnumerator SetUpSawPhase5()
         {
             setUpEnd = true;
@@ -825,6 +921,7 @@ namespace PaleChampion
             Log("err3");
             foreach (GameObject i in AllSaws)
             {
+                Log(i.transform.GetPositionZ());
                 allSawPos.Add(i.transform.position);
             }
             yield return null;
@@ -840,21 +937,19 @@ namespace PaleChampion
             }
             leftSaw.RemoveAt(0);
             rightSaw.RemoveAt(rightSaw.Count - 1);
-            upSaw.Add(upDSaw[upDSaw.Count - 1]);
+            upSaw.Add(upDSaw[upDSaw.Count - 1]); /////////////////////////////////////////////////Maybe removing these will let you fix it
 
-            _hm.hp = 1300;
+            if (_hm.hp < 1200)
+            {
+                _hm.hp = 1200;
+            }
 
-            //var sca = gameObject.transform.localScale;
-            //gameObject.transform.localScale = new Vector3(-1f * sca.x, sca.y, sca.z);
             
             _rgbd.gravityScale = 2f;
             yield return new WaitWhile(() => !lurkOnPlat);
             lurkOnPlat = false;
             _anim.Play("Idle");
-            //_rgbd.velocity = new Vector2(0f, 0f);
-            //_rgbd.gravityScale = 0f;
             yield return new WaitForSeconds(0.1f);
-            round = 0;
             StartCoroutine(SawMoveSelector());
             StartCoroutine(LurkerJumperAI());
         }
@@ -955,7 +1050,7 @@ namespace PaleChampion
                 lurker2.transform.localScale = new Vector2(-1f * lurker2.transform.localScale.x, lurker2.transform.localScale.y);
 
                 _rgbd.velocity = new Vector2(-1f * xSpd * side, 0f);
-                yield return new WaitWhile(() => !FastApproximately(gameObject.transform.GetPositionX(), 102.5f, 0.1f));
+                yield return new WaitWhile(() => !FastApproximately(gameObject.transform.GetPositionX(), 102.5f, 1f));
                 _rgbd.gravityScale = 2f;
                 _rgbd.velocity = new Vector2(0f, 0f);
 
@@ -995,7 +1090,7 @@ namespace PaleChampion
             Log("Pick Saw Move");
             Log("Current HP: " + _hm.hp);
             Log("Current round " + round);
-            if (round > 20)
+            if (round > 16)
             {
                 _hm.hp = 1000;
                 StartCoroutine(HallwaySaw());
@@ -1014,11 +1109,10 @@ namespace PaleChampion
             else if (random == 2) StartCoroutine(RandomSaw());
             else if (random == 3) StartCoroutine(VerHorSaw());
 
-            Log("check " + _hm.hp + " " + round);
             if (_hm.hp < 1000 && round == 0)
             {
                 Log("HP LESS THAN 1000");
-                for (int i = 84; i < 122; i += 2)
+                for (float i = 84f; i < 122f; i += 2f)
                 {
                     var smoke = Instantiate(PaleChampion.preloadedGO["smoke"]);
                     smoke.SetActive(true);
@@ -1027,14 +1121,13 @@ namespace PaleChampion
                     smokeBomb.Add(smoke);
                     yield return null;
                 }
-                sawSpd -= 2f;
+                sawSpd -= 4f;
                 level = 4;
                 round = 10;
             }
             if (round >= 10) round++;
             Log("Reached end of choice");
         }
-
         public IEnumerator OneSideSaw()
         {
             side = negToPos();
@@ -1048,6 +1141,14 @@ namespace PaleChampion
                     if (side == 1) AllSaws[rand].SetActive(false);
                     else AllSaws[rand+16].SetActive(false);
                     continue;
+                }
+                if (i < rand && side==1)
+                {
+                    AllSaws[i].transform.SetPositionY(AllSaws[i].transform.GetPositionY() + 0.75f);
+                }
+                else if (i < rand)
+                {
+                    AllSaws[i + 33].transform.SetPositionY(AllSaws[i + 33].transform.GetPositionY() + 0.75f);
                 }
                 if (side == 1) AllSaws[i].SetActive(true);
                 else AllSaws[i+33].SetActive(true);
@@ -1099,6 +1200,11 @@ namespace PaleChampion
                     AllSaws[rand + 16].SetActive(false);
                     continue;
                 }
+                if (i < rand)
+                {
+                    AllSaws[i].transform.SetPositionY(AllSaws[i].transform.GetPositionY() + 0.75f);
+                    AllSaws[i + 33].transform.SetPositionY(AllSaws[i+33].transform.GetPositionY() + 0.75f);
+                }
                 AllSaws[i].SetActive(true);
                 AllSaws[i + 33].SetActive(true);
             }
@@ -1128,6 +1234,7 @@ namespace PaleChampion
             Log("get new saws");
             StartCoroutine(SawMoveSelector());
         }
+
         IEnumerator VerHorSaw()
         {
             ResetSawPos();
@@ -1170,8 +1277,11 @@ namespace PaleChampion
 
             for (int i = 0; i < listToUse.Count; i++)
             {
-                Log(listToUse[i].name);
                 if (i == r2 || i == r2 - 1) continue;
+                if (i > r2)
+                {
+                    listToUse[i].transform.SetPositionY(listToUse[i].transform.GetPositionY() - 1.2f);
+                }
                 GameObject saw2 = Instantiate(listToUse[i]);
                 listToUse[i].SetActive(true);
                 saw2.SetActive(true);
@@ -1212,20 +1322,22 @@ namespace PaleChampion
             int count1 = 0;
             float ang1 = 190f;
             float ang2 = 350f;
+            int consecN = 0;
             foreach (GameObject i in AllSaws)
             {
-                if (UnityEngine.Random.Range(0, 5) == 1)
+                if (UnityEngine.Random.Range(0, 2) == 1)
                 {
-                    
+                    consecN++;
+                    if (consecN > 1) continue;
                     i.SetActive(true);
                     yield return null;
                     Vector2 pos = i.transform.position;
                     var rb = i.GetComponent<Rigidbody2D>();
-                    
-                    if (Mathf.Approximately(pos.x,85.5f) && pos.y < 20.1f) rb.velocity = new Vector2(-1f * sawSpd, 0f); //left
+
+                    if (Mathf.Approximately(pos.x, 85.5f) && pos.y < 20.1f) rb.velocity = new Vector2(-1f * sawSpd, 0f); //left
                     else if (Mathf.Approximately(pos.x, 119.5f) && pos.y < 21f) rb.velocity = new Vector2(sawSpd, 0f); //right
                     else if (!Mathf.Approximately(pos.x, 102.5f) && pos.y > 21f) rb.velocity = new Vector2(0f, sawSpd); //up
-                    else if (!Mathf.Approximately(pos.x,102.5f) && pos.y < 5.5f) rb.velocity = new Vector2(0f, -1f * sawSpd); //down
+                    else if (!Mathf.Approximately(pos.x, 102.5f) && pos.y < 5.5f) rb.velocity = new Vector2(0f, -1f * sawSpd); //down
                     else if (Mathf.Approximately(pos.x, 102.5f) && pos.y > 21f) //Diag up 
                     {
                         if (count1 % 2 == 0)
@@ -1248,6 +1360,7 @@ namespace PaleChampion
                     }
                     yield return new WaitForSeconds(0.1f);
                 }
+                else consecN = 0;
             }
 
             yield return new WaitForSeconds(3.5f);
@@ -1303,7 +1416,7 @@ namespace PaleChampion
             _rgbd.gravityScale = 0f;
             _rgbd.velocity = new Vector2(0f, 0f);
             _rgbd.isKinematic = true;
-            while (_hm.hp > 800)
+            while (!fleeHallWay)
             {
                 gameObject.transform.position = new Vector2(85.5f, 15.5f);
                 var sca = gameObject.transform.localScale;
@@ -1318,6 +1431,7 @@ namespace PaleChampion
 
                 while (hits < 3)
                 {
+                    if (fleeHallWay) break;
                     for (int i = -1; i < 2; i++)
                     {
                         var bomb = Instantiate(PaleChampion.preloadedGO["bomb"]);
@@ -1332,21 +1446,14 @@ namespace PaleChampion
                         var p1 = bomb.transform.position;
                         var p2 = HeroController.instance.transform.position;
                         bomb.GetComponent<Rigidbody2D>().velocity = new Vector2((p2 - p1).x * 2.5f + i * 4, (p2 - p1).y * 1.5f);
-                        /*var bomb = Instantiate(PaleChampion.preloadedGO["bomb"]);
-                        bomb.GetComponent<ParticleSystem>().Play();
-                        bomb.SetActive(true);
-                        bomb.AddComponent<SpawnPillar>();
-                        bomb.transform.SetPosition2D(gameObject.transform.GetPositionX() - 1.5f, gameObject.transform.GetPositionY());
-                        var diff = HeroController.instance.transform.position - gameObject.transform.position;
-                        bomb.GetComponent<Rigidbody2D>().gravityScale = 1f;
-                        bomb.GetComponent<Rigidbody2D>().bodyType = RigidbodyType2D.Dynamic;
-                        bomb.GetComponent<Rigidbody2D>().velocity = new Vector2(diff.x * 2f + i * 15f, diff.y + i * 2f);*/
                     }
                     _anim.Play("Throw");
                     yield return new WaitWhile(() => _anim.IsPlaying("Throw"));
                     _anim.Play("Wall Cling");
                     yield return new WaitWhile(() => _anim.IsPlaying("Wall Cling"));
+                    if (fleeHallWay) break;
                     yield return new WaitForSeconds(3f);
+                    if (fleeHallWay) break;
                 }
                 hits = 0;
                 gameObject.transform.SetRotation2D(-90f);
@@ -1368,6 +1475,7 @@ namespace PaleChampion
 
                 while (hits < 3)
                 {
+                    if (fleeHallWay) break;
                     for (int i = -1; i < 2; i++)
                     {
                         var bomb = Instantiate(PaleChampion.preloadedGO["bomb"]);
@@ -1382,21 +1490,14 @@ namespace PaleChampion
                         var p1 = bomb.transform.position;
                         var p2 = HeroController.instance.transform.position;
                         bomb.GetComponent<Rigidbody2D>().velocity = new Vector2((p2 - p1).x*2.5f + i * 4, (p2 - p1).y*1.5f);
-                        /*var bomb = Instantiate(PaleChampion.preloadedGO["bomb"]);
-                        bomb.GetComponent<ParticleSystem>().Play();
-                        bomb.SetActive(true);
-                        bomb.AddComponent<SpawnPillar>();
-                        bomb.transform.SetPosition2D(gameObject.transform.GetPositionX() - 1.5f, gameObject.transform.GetPositionY());
-                        var diff = HeroController.instance.transform.position - gameObject.transform.position;
-                        bomb.GetComponent<Rigidbody2D>().gravityScale = 1f;
-                        bomb.GetComponent<Rigidbody2D>().bodyType = RigidbodyType2D.Dynamic;
-                        bomb.GetComponent<Rigidbody2D>().velocity = new Vector2(diff.x * 2f + i * 15f, diff.y + i * 2f);*/
                     }
                     _anim.Play("Throw");
                     yield return new WaitWhile(() => _anim.IsPlaying("Throw"));
                     _anim.Play("Wall Cling");
                     yield return new WaitWhile(() => _anim.IsPlaying("Wall Cling"));
+                    if (fleeHallWay) break;
                     yield return new WaitForSeconds(3f);
+                    if (fleeHallWay) break;
                 }
                 hits = 0;
                 //hallWayRounds++;
@@ -1413,9 +1514,11 @@ namespace PaleChampion
                 _rgbd.isKinematic = true;
                 yield return null;
             }
+            fleeHallWay = false;
         }
         bool stopFollowGO = false;
         //int hallWayRounds = 0;
+        bool fleeHallWay;
         IEnumerator HallwaySaw()
         {
             ResetSawPos();
@@ -1527,16 +1630,50 @@ namespace PaleChampion
                 }
                 else
                 {
-                    foreach (GameObject i in allHallway)
+                    float tme = 0;
+                    GameObject oldSawGO = allHallway[0];
+                    while (tme < 8f)
                     {
-                        if (UnityEngine.Random.Range(0, 5) == 0) i.AddComponent<HallWaySaw>();
-                        yield return new WaitForSeconds(1f);
+                        var newSawGO = GetClosestEnemy(allHallway);
+                        if (newSawGO == oldSawGO)
+                        {
+                            tme += 2f;
+                            yield return new WaitForSeconds(2f);
+                            newSawGO = GetClosestEnemy(allHallway);
+                        }
+                        newSawGO.AddComponent<HallWaySaw>();
+                        //tme += Time.deltaTime + 0.5f;
+                        //yield return new WaitForSeconds(0.5f);
+                        yield return null;
+                        tme += Time.deltaTime;
+                        oldSawGO = newSawGO;
                     }
                 }
-                yield return new WaitForSeconds(1f);
+                yield return new WaitForSeconds(1.5f);
             }
+            fleeHallWay = true;
             yield return new WaitForSeconds(1.5f);
+            yield return new WaitWhile(() => fleeHallWay);
             StartCoroutine(FinalSawPhase());
+        }
+
+        GameObject GetClosestEnemy(List<GameObject> enemies)
+        {
+            Transform bestTarget = null;
+            float closestDistanceSqr = Mathf.Infinity;
+            Vector3 currentPosition = HeroController.instance.transform.position;
+            foreach (GameObject potentialTarget in enemies)
+            {
+                Vector3 directionToTarget = potentialTarget.transform.position - currentPosition;
+                float dSqrToTarget = directionToTarget.sqrMagnitude;
+                if (dSqrToTarget < closestDistanceSqr)
+                {
+                    closestDistanceSqr = dSqrToTarget;
+                    bestTarget = potentialTarget.transform;
+                }
+            }
+
+            return bestTarget.gameObject;
         }
         IEnumerator SpikeFollowX(GameObject follower, GameObject follow, int side)
         {
@@ -1548,16 +1685,7 @@ namespace PaleChampion
                 yield return null;
             }
         }
-        /*IEnumerator SpikeFollowY(GameObject follower, GameObject follow)
-        {
-            while (true)
-            {
-                var fPos = follow.transform.position;
-                var oPos = follower.transform.position;
-                follower.transform.position = new Vector3(oPos.x, fPos.y + 1.7f, 1.5f);
-                yield return null;
-            }
-        }*/
+
         IEnumerator FinalSawPhase()
         {
             foreach (GameObject i in allUpperSpike)
@@ -1568,23 +1696,30 @@ namespace PaleChampion
             StartCoroutine(UpperPlatPuzz());
             StartCoroutine(BubbleBath());
             yield return new WaitForSeconds(1.5f);
-            while (!platPhaseEnd)
+            while (!aspidsDie)
             {
-                if (GameObject.Find("aspid0") == null)
+                if (GameObject.Find("enemyT aspid0") == null)
                 {
                     StartCoroutine(EnemyTrial2(87f, 17.5f, 0));
                 }
-                if (GameObject.Find("aspid1") == null)
+                if (GameObject.Find("enemyT aspid1") == null)
                 {
                     StartCoroutine(EnemyTrial2(117f, 17.5f, 1));
                 }
                 yield return new WaitForSeconds(1.5f);
             }
-            GameObject.Find("aspid0").GetComponent<AspidControl>()._pos.y += 20f;
-            GameObject.Find("aspid1").GetComponent<AspidControl>()._pos.y += 20f;
+            GameObject.Find("enemyT aspid0").GetComponent<AspidControl>()._pos.y += 10f;
+            GameObject.Find("enemyT aspid1").GetComponent<AspidControl>()._pos.y += 10f;
+            yield return new WaitForSeconds(1f);
+            Destroy(GameObject.Find("enemyT aspid0"));
+            Destroy(GameObject.Find("enemyT aspid1"));
+            Log("Ended their life sir");
+
+            /*GameObject.Find("enemyT aspid0").GetComponent<AspidControl>()._pos.y += 20f;
+            GameObject.Find("enemyT aspid1").GetComponent<AspidControl>()._pos.y += 20f;
             yield return new WaitForSeconds(3f);
-            Destroy(GameObject.Find("aspid0"));
-            Destroy(GameObject.Find("aspid1"));
+            Destroy(GameObject.Find("enemyT aspid0"));
+            Destroy(GameObject.Find("enemyT aspid1"));*/
         }
         public static bool platPhaseEnd;
         IEnumerator UpperPlatPuzz()
@@ -1616,7 +1751,7 @@ namespace PaleChampion
                     Vector2 pl = HeroController.instance.transform.position;
                     index = 1;
                     float minDist = Vector2.Distance(allUpperPlat[index].transform.position, pl);
-                    for (int i = 0; i < allUpperPlat.Count; i++)
+                    for (int i = 1; i < allUpperPlat.Count-1; i++)
                     {
                         float temp = Vector2.Distance(allUpperPlat[i].transform.position, pl);
                         if (temp < minDist)
@@ -1644,8 +1779,8 @@ namespace PaleChampion
                     yield return new WaitForSeconds(interval);
                     Vector2 pl = HeroController.instance.transform.position;
                     float minDist = Vector2.Distance(allUpperPlat[1].transform.position, pl);
-                    index = 1;
-                    for (int i = 0; i < allUpperPlat.Count; i++)
+                    index = 2;
+                    for (int i = 2; i < allUpperPlat.Count - 1; i++)
                     {
                         float temp = Vector2.Distance(allUpperPlat[i].transform.position, pl);
                         if (temp < minDist)
@@ -1654,8 +1789,8 @@ namespace PaleChampion
                             index = i;
                         }
                     }
-                    if (index < 2) index = 2;
-                    if (index > allUpperPlat.Count - 3) index = allUpperPlat.Count - 3;
+                    //if (index < 2) index = 2;
+                    //if (index > allUpperPlat.Count - 3) index = allUpperPlat.Count - 3;
                     for (int j = -1; j < 2; j++)
                     {
                         var comp2 = allUpperPlat[index + j].GetComponent<MoveFloorUp>();
@@ -1684,8 +1819,8 @@ namespace PaleChampion
                     yield return new WaitForSeconds(interval);
                     Vector2 pl = HeroController.instance.transform.position;
                     float minDist = Vector2.Distance(allUpperPlat[1].transform.position, pl);
-                    index = 1;
-                    for (int i = 0; i < allUpperPlat.Count; i++)
+                    index = 2;
+                    for (int i = 2; i < allUpperPlat.Count-1; i++)
                     {
                         float temp = Vector2.Distance(allUpperPlat[i].transform.position, pl);
                         if (temp < minDist)
@@ -1694,15 +1829,19 @@ namespace PaleChampion
                             index = i;
                         }
                     }
-                    if (index < 2) index = 2;
-                    if (index > allUpperPlat.Count - 3) index = allUpperPlat.Count - 3;
+
+                    //if (index < 2) index = 2;
+                    //if (index > allUpperPlat.Count - 3) index = allUpperPlat.Count - 3;
+                    Log("hmm");
                     for (int j = -1; j < 2; j++)
                     {
                         var comp = allUpperPlat[index + j].GetComponent<MoveFloorUp>();
+                        Log("hmm2");
                         comp.moveTo += upBy;
                         comp.speed = 0.2f;
                         comp.move = true;
                     }
+
                     pillarRound++;
                 }
                 else if (!allUpperPlat[index].GetComponent<MoveFloorUp>().move && !allUpperPlat[index + 1].GetComponent<MoveFloorUp>().move && !allUpperPlat[index - 1].GetComponent<MoveFloorUp>().move && pillarRound == 20)
@@ -1794,6 +1933,7 @@ namespace PaleChampion
                         if (rightSaw[i].activeSelf) rightSaw[i].GetComponent<Rigidbody2D>().velocity = new Vector2(-10f, 0f);
                     }
                     while (rightSaw[0].transform.GetPositionX() > 45f) yield return null;
+                    aspidsDie = true;
                     yield return new WaitForSeconds(5f);
                     Log("wait for plat");
                     platPhaseEnd = true;
@@ -1810,6 +1950,8 @@ namespace PaleChampion
             }
             Log("hmmmmm");
         }
+        bool aspidsDie;
+
         IEnumerator BubbleBath()
         {
             var spit = Instantiate(PaleChampion.preloadedGO["spit"]);
@@ -1818,6 +1960,7 @@ namespace PaleChampion
             spit.transform.SetPosition2D(86f, 6f);
             spit.AddComponent<Rigidbody2D>().velocity = new Vector2(10f, 0f);
             spit.AddComponent<DamageAdder>();
+            spit.AddComponent<TinkSound>();
             spit.name += "dank";
             int ballRounds = 0;
             float bubRate = 2f;
@@ -1829,6 +1972,7 @@ namespace PaleChampion
                 spit.transform.SetPosition2D(86f, 6f);
                 spit.AddComponent<Rigidbody2D>().velocity = new Vector2(10f, 0f);
                 spit.AddComponent<DamageAdder>();
+                spit.AddComponent<TinkSound>();
 
                 var spit2 = Instantiate(PaleChampion.preloadedGO["spit"]);
                 spit2.SetActive(true);
@@ -1836,6 +1980,7 @@ namespace PaleChampion
                 spit2.transform.SetPosition2D(119f, 6f);
                 spit2.AddComponent<Rigidbody2D>().velocity = new Vector2(-10f, 0f);
                 spit2.AddComponent<DamageAdder>();
+                spit2.AddComponent<TinkSound>();
                 if (platPhaseEnd)
                 {
                     spit.transform.localScale *= 1.6f;
@@ -1843,7 +1988,7 @@ namespace PaleChampion
                 }
                 spit.name += "dank";
                 spit2.name += "dank";
-                if (ballRounds % 15 == 0 && bubRate > 1f) bubRate -= 0.3f;
+                if (ballRounds % 15 == 0 && bubRate >= 0.8f) bubRate -= 0.3f;
                 if (ballRounds == 70 && platPhaseEnd) StartCoroutine(BallBouce());
                 ballRounds++;
                 yield return new WaitForSeconds(bubRate);
@@ -1859,7 +2004,8 @@ namespace PaleChampion
             spit3.transform.localScale *= 2f;
             spit3.AddComponent<Rigidbody2D>();
             spit3.AddComponent<DamageAdder>().bigBalls = true;
-            spit3.name += "dank";
+            spit3.name += "dank not";
+            spit3.AddComponent<TinkSound>();
 
             var spit4 = Instantiate(PaleChampion.preloadedGO["spit"]);
             spit4.SetActive(true);
@@ -1868,9 +2014,11 @@ namespace PaleChampion
             spit4.transform.localScale *= 2f;
             spit4.AddComponent<Rigidbody2D>();
             spit4.AddComponent<DamageAdder>().bigBalls = true;
-            spit4.name += "dank";
+            spit4.name += "dank not";
+            spit4.AddComponent<TinkSound>();
         }
         bool end;
+        bool epicMusTime;
         IEnumerator OblobPhase()
         {
             var a = Instantiate(PaleChampion.preloadedGO["ob"]);
@@ -1881,9 +2029,13 @@ namespace PaleChampion
             a.transform.SetPosition2D(110f, 14f);
             a.AddComponent<OblobControl>(); //give balls another GO that has layer ground
             a.GetComponent<BoxCollider2D>().enabled = false;
-            //yield return new WaitForSeconds(1f);
-            //platPhaseEnd = true;
+
+           // yield return new WaitForSeconds(1f);
+           // platPhaseEnd = true;
+            //_control.enabled = false;
+
             yield return new WaitWhile(() => a.transform.position.y < 28f);
+            epicMusTime = true;
             lurker2.SetActive(true);
             a.GetComponent<BoxCollider2D>().enabled = true;
             a.GetComponent<DamageHero>().enabled = true;
@@ -1892,7 +2044,8 @@ namespace PaleChampion
             StartCoroutine(lurker2.GetComponent<CustomAnimator>().Play("idle", true));
             float wave = 0f;
             StartCoroutine(Lurker2Attack(a));
-            while (hp.hp > 100 || a.GetComponent<OblobControl>().attacking)
+            StartCoroutine(FlameRaiser());
+            while (hp.hp > 200 || a.GetComponent<OblobControl>().attacking)
             {
                 Vector3 offset = new Vector3(0f, 2.5f, -1f);
                 if (lurker2.GetComponent<CustomAnimator>().animCurr == "throw") offset = new Vector3(0.1f, 2.3f, -1f);
@@ -1902,24 +2055,28 @@ namespace PaleChampion
                 lurker2.transform.SetPosition3D(a.transform.position.x + offset.x, a.transform.position.y + 0.05f * Mathf.Cos(wave) + offset.y, a.transform.position.z + offset.z);
                 lurker2.transform.localScale = new Vector2(Mathf.Abs(lc.x) * hSide, lc.y);
                 wave += 0.65f;
-                Log("hp " + hp.hp);
-                if (hp.hp <= 100)
+                if (hp.hp <= 200)
                 {
                     a.GetComponent<OblobControl>().end = true;
                     end = true;
+                    a.GetComponent<Recoil>().enabled = false;
+                    hp.IsInvincible = true;
                 }
                 yield return null;
             }
             //hp.hp = 0;
             a.GetComponent<OblobControl>().end = true;
             end = true;
-            yield return new WaitForSeconds(1f);
+            a.GetComponent<Recoil>().enabled = false;
+            hp.IsInvincible = true;
+            //yield return new WaitForSeconds(1f);
             StartCoroutine(lurker2.GetComponent<CustomAnimator>().Play("jump", false));
             yield return new WaitWhile(() => lurker2.GetComponent<CustomAnimator>().animCurr != "jump");
             lurker2.transform.SetPosition3D(a.transform.position.x + 0.1f, a.transform.position.y + 0.05f * Mathf.Cos(wave) + 2.5f, a.transform.position.z + -1f);
             yield return new WaitForSeconds(4f * 0.1f);
             Log("hi");
             lurker2.GetComponent<Rigidbody2D>().velocity = new Vector2(0f, 20f);
+            hp.IsInvincible = false;
             while (GameObject.Find("Spitter Shot R(Clone)(Clone)dank") != null)
             {
                 Destroy(GameObject.Find("Spitter Shot R(Clone)(Clone)dank"));
@@ -1933,22 +2090,101 @@ namespace PaleChampion
             _rgbd.gravityScale = 0f;
             _rgbd.velocity = new Vector2(0f, 0f);
             foreach (var i in allLowerSpike) i.LocateMyFSM("Control").SendEvent("RETRACT");
+            yield return new WaitWhile(()=>!hp.isDead);
             yield return new WaitForSeconds(3f);
+            Log("DYIEIEIE");
             _rgbd.isKinematic = false;
             _rgbd.gravityScale = 2f;
-            yield return new WaitForSeconds(0.5f);
-            _hm.hp = 0;
-            //yield return new WaitWhile(() => _rgbd.velocity != new Vector2(0f, 0f));
-            //_rgbd.velocity = new Vector2(0f, 0f);
-            //_anim.Play("Idle");
-            Log("back");
-            //hm.transform.SetPosition2D(HeroController.instance.transform.position);
-            yield return new WaitForSeconds(3f);
-            GameCameras.instance.cameraFadeFSM.Fsm.Event("START FADE");
-           
+            _hm.hp = 1000;
 
-           // GameCameras.instance.cameraFadeFSM.Fsm.SetState("FadeIn");
-             
+            yield return new WaitWhile(() => gameObject.transform.GetPositionY() > 7f);
+            _anim.Play("Idle");
+            PaleChampion.preloadedGO["music box"].GetComponent<AudioSource>().Stop();
+            yield return new WaitForSeconds(1f);
+            GameObject.Find("Godseeker Crowd").LocateMyFSM("Control").SendEvent("LOOK UP");
+            yield return new WaitForSeconds(1f);
+            AudioListener.pause = true;
+            GameCameras.instance.cameraFadeFSM.Fsm.Event("FADE OUT");
+            StartCoroutine(EndingTextFade());
+        }
+
+        int MinDistFind(Vector2 target, float rot)
+        {
+            List<Vector2> enems = new List<Vector2>();
+            if (rot == 0f) enems = flameL;
+            else if (rot == 90f) enems = flameU;
+            else if (rot == 180f) enems = flameR;
+            float minDist = Vector2.Distance(enems[0], target);
+            int index = 3;
+            for (int i = 3; i < enems.Count-3; i++)
+            {
+                float temp = Vector2.Distance(enems[i], target);
+                if (temp < minDist)
+                {
+                    minDist = temp;
+                    index = i;
+                }
+            }
+            return index;
+        }
+
+        private IEnumerator FlameRaiser()
+        {
+            yield return new WaitForSeconds(1f);
+            while (!end)
+            {
+                var pos = MinDistFind(HeroController.instance.transform.position, 90f);
+                var c = Instantiate(PaleChampion.preloadedGO["fire"]);
+                c.transform.GetChild(0).gameObject.AddComponent<FlameEnder>().duration = 5f;
+                c.SetActive(true);
+                c.transform.SetPosition2D(flameU[pos + 3]);
+                c.transform.GetChild(0).Rotate(new Vector2(0f, 90f));
+                c.transform.GetChild(1).Rotate(new Vector2(0f, 90f));
+
+                pos = MinDistFind(HeroController.instance.transform.position, 90f);
+                c = Instantiate(PaleChampion.preloadedGO["fire"]);
+                c.transform.GetChild(0).gameObject.AddComponent<FlameEnder>().duration = 3f;
+                c.SetActive(true);
+                c.transform.SetPosition2D(flameU[pos - 3]);
+                c.transform.GetChild(0).Rotate(new Vector2(0f, 90f));
+                c.transform.GetChild(1).Rotate(new Vector2(0f, 90f));
+                /*for (float i = 0; i <= 180f; i += 90f)
+                {
+                    var pos = MinDistFind(HeroController.instance.transform.position, i);
+                    var c = Instantiate(PaleChampion.preloadedGO["fire"]);
+                    c.transform.GetChild(0).gameObject.AddComponent<FlameEnder>().duration = 5f;
+                    c.SetActive(true);
+                    c.transform.SetPosition2D(pos);
+                    c.transform.GetChild(0).Rotate(new Vector2(0f, i));
+                    c.transform.GetChild(1).Rotate(new Vector2(0f, i));
+                }*/
+                yield return new WaitForSeconds(6f);
+            }
+
+        }
+
+        IEnumerator EndingTextFade()
+        {
+             Log("strt");
+            yield return new WaitForSeconds(0.5f);
+            CanvasUtil.CreateFonts();
+            canvas = CanvasUtil.CreateCanvas(RenderMode.ScreenSpaceOverlay, new Vector2(1536f,864f));
+            endingTxt = CanvasUtil.CreateTextPanel(canvas, "", 40, TextAnchor.MiddleCenter, new CanvasUtil.RectData(new Vector2(1000, 1500), new Vector2(0f, 600f), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0.5f)), false).GetComponent<Text>();
+            endingTxt.color = new Color(1f,1f,1f,1f);
+            endingTxt.text = "";
+            Log("guh");
+            endingTxt.font = CanvasUtil.GetFont("Perpetua");
+            yield return new WaitForSeconds(0.5f);
+            string txt = "Those great Knights challenged the Blackwyrm, and by defeating it revealed its followers as Fools. If death can claim such an ancient thing, then what of our King? Though regarded as deity, could he fail us also?"; 
+            for (int i = 0; i < txt.Length; i++)
+            {
+                endingTxt.text += txt[i]; 
+                yield return new WaitForSeconds(0.02f);
+            }
+            yield return new WaitWhile(() => !Input.anyKeyDown);
+            Log("hmm");
+            var endCtrl = GameObject.Find("Boss Scene Controller").LocateMyFSM("Dream Return");
+            endCtrl.SendEvent("DREAM RETURN");
         }
         IEnumerator Lurker2Attack(GameObject oblob)
         {
@@ -1984,31 +2220,49 @@ namespace PaleChampion
         public static bool setUpEnd = false;
         public static int _temp = 0;
         List<GameObject> AllSaws = new List<GameObject>();
-        IEnumerator EnemyTrial(float x, float y)
+        bool renewEnem;
+        IEnumerator AspidTrial(float x, float y)
         {
-            StartCoroutine(SpawnEnemies(x - 14f, y + 6f,0));
+            if (GameObject.Find("enemyT aspid0") == null) StartCoroutine(SpawnEnemies(0, x - 14f, y + 6f, 0));
             yield return null;
-            StartCoroutine(SpawnEnemies(x + 14f, y + 6f,1));
+            if (GameObject.Find("enemyT aspid1") == null) StartCoroutine(SpawnEnemies(0,x + 14f, y + 6f,1));
             yield return null;
-            yield return new WaitForSeconds(3.5f);
-            while (true)
+            if (GameObject.Find("enemyT obb2") == null) StartCoroutine(SpawnEnemies(1, 105f, 19f, 2));
+            yield return new WaitForSeconds(5.5f);
+            while (!renewEnem)
             {
                 bool isBreak = true;
-                foreach (var i in FindObjectsOfType<GameObject>().Where(asp => asp.activeSelf && asp.name.Contains("aspid")))
+                foreach (var i in FindObjectsOfType<GameObject>().Where(asp => asp.activeSelf && asp.name.Contains("enemyT")))
                 {
                     isBreak = false;
                 }
                 if (isBreak) break;
                 yield return null;
             }
+            renewEnem = false;
             if (!setUpEnd)
             {
-                StartCoroutine(EnemyTrial(x, y));
+                StartCoroutine(AspidTrial(x, y));
+            }
+        }
+        IEnumerator BlobTrial(float x, float y)
+        {
+            StartCoroutine(SpawnEnemies(1,x,y,0));
+            yield return new WaitForSeconds(4.5f);
+            while (true)
+            {
+                if (GameObject.Find("obb0") == null) break;
+                yield return null;
+            }
+            yield return new WaitForSeconds(0.5f);
+            if (!setUpEnd)
+            {
+                StartCoroutine(BlobTrial(x, y));
             }
         }
         IEnumerator EnemyTrial2(float x, float y, int aspidN)
         {
-            StartCoroutine(SpawnEnemies(x, y, aspidN));
+            StartCoroutine(SpawnEnemies(0,x, y, aspidN));
             yield return new WaitForSeconds(2.5f);
         }
 
@@ -2065,9 +2319,11 @@ namespace PaleChampion
             }
             if (!retractSpikes1) plat.LocateMyFSM("Control").SendEvent(retract);
         }
-        IEnumerator SpawnEnemies(float x = 102.6f, float y = 8f, int aspidN = 0)
+        IEnumerator SpawnEnemies(int type, float x = 102.6f, float y = 8f, int number = 0)
         {
-            var enem = Instantiate(PaleChampion.preloadedGO["cage"]);
+            string typeName = "cage";
+            if (type == 1) typeName = "cage obb";
+            var enem = Instantiate(PaleChampion.preloadedGO[typeName]);
             var enemFsm = enem.LocateMyFSM("Spawn");
             enem.SetActive(true);
             enem.transform.SetPosition2D(x, y);
@@ -2080,27 +2336,16 @@ namespace PaleChampion
             yield return null;
             enemFsm.SendEvent("SUMMON");
 
-            if (true) /////////////////////////////////////////////////////////
-            {
-                GameObject aspid = enemFsm.GetAction<ActivateGameObject>("Spawn", 0).gameObject.GameObject.Value;
-                aspid.AddComponent<AspidControl>();
-                aspid.name = "aspid" + aspidN;
-            }
-            else
-            {
-                GameObject aspid = enemFsm.GetAction<ActivateGameObject>("Spawn", 0).gameObject.GameObject.Value;
-                aspid.AddComponent<SpecialAspid>().mode = aspidN;
-                aspid.name = "aspid" + aspidN;
-            }
+            GameObject enemy = enemFsm.GetAction<ActivateGameObject>("Spawn", 0).gameObject.GameObject.Value;
+            if (type == 0) enemy.name = "enemyT aspid" + number;
+            else enemy.name = "enemyT obb" + number;
+            enemy.AddComponent<AspidControl>()._pos = new Vector2(x,y);
         }
-
         private void OnDestroy()
         {
-            USceneManager.activeSceneChanged -= SceneChanged;
-            gameObject.GetComponent<tk2dSprite>().GetCurrentSpriteDef().material.mainTexture = oldPLTex;
+            ModHooks.Instance.TakeHealthHook -= TookDamge;
             Destroy(gameObject);
         }
-
         private static void Log(object obj)
         {
             Logger.Log("[Pale Champion] " + obj);

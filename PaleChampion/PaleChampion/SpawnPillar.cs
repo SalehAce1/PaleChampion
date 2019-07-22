@@ -35,14 +35,6 @@ namespace PaleChampion
             }
         }
 
-        void OnTriggerEnter2D(Collider2D col)
-        {
-            /*if (col.gameObject.layer == 8)//col.name == "Chunk 0 3" || col.name == "Floor Saver"
-            {
-                StartCoroutine(DestroyBomb());
-            }*/
-        }
-
         public IEnumerator DestroyBomb()
         {
             yield return null;
@@ -53,11 +45,25 @@ namespace PaleChampion
             var a = Instantiate(PaleChampion.preloadedGO["pillar"]);
             a.transform.SetPosition2D(gameObject.transform.position.x, gameObject.transform.Find("normal").gameObject.transform.position.y + 6.5f); //orig: x,9f
             a.SetActive(true);
+            StartCoroutine(PillarMus(a));
             //if (gameObject.transform.GetPositionX() < 85.5f) a.transform.SetRotation2D(-90f);
             //if (gameObject.transform.GetPositionX() > 119.5f) a.transform.SetRotation2D(90f);
             yield return new WaitForSeconds(0.5f); 
 
             Destroy(gameObject);
+        }
+
+        IEnumerator PillarMus(GameObject go)
+        {
+            go.AddComponent<AudioSource>().clip = GOLoader.pillAud;
+            go.GetComponent<AudioSource>().Play();
+            go.GetComponent<AudioSource>().volume = 0.25f;
+            yield return new WaitForSeconds(0.45f);
+            go.GetComponent<AudioSource>().Stop();
+            go.GetComponent<AudioSource>().clip = GOLoader.pillAud2;
+            go.GetComponent<AudioSource>().pitch = 1;
+            go.GetComponent<AudioSource>().volume = 0.25f;
+            go.GetComponent<AudioSource>().Play();
         }
     }
 }

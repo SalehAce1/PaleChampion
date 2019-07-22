@@ -219,8 +219,6 @@ C:\Users\ghaem\Desktop\Projects\HK Code\PaleChampion\PaleChampion\PaleChampion\b
 C:\Users\ghaem\Desktop\Projects\HK Code\PaleChampion\PaleChampion\PaleChampion\bin\Debug\UnityEngine.ParticleSystemModule.dll
 C:\Users\ghaem\Desktop\Projects\HK Code\PaleChampion\PaleChampion\PaleChampion\bin\Debug\UnityEngine.Physics2DModule.dll
 C:\Users\ghaem\Desktop\Projects\HK Code\PaleChampion\PaleChampion\PaleChampion\bin\Debug\UnityEngine.UI.dll
-C:\Users\ghaem\Desktop\Projects\HK Code\PaleChampion\PaleChampion\PaleChampion\bin\Debug\UnityEngine.UIModule.dll
-C:\Users\ghaem\Desktop\Projects\HK Code\PaleChampion\PaleChampion\PaleChampion\bin\Debug\UnityEngine.TextRenderingModule.dll
 C:\Users\ghaem\Desktop\Projects\HK Code\PaleChampion\PaleChampion\PaleChampion\bin\Debug\UnityEngine.PhysicsModule.dll
 C:\Users\ghaem\Desktop\Projects\HK Code\PaleChampion\PaleChampion\PaleChampion\bin\Debug\UnityEngine.AnimationModule.dll
 C:\Users\ghaem\Desktop\Projects\HK Code\PaleChampion\PaleChampion\PaleChampion\bin\Debug\UnityEngine.AIModule.dll
@@ -268,8 +266,6 @@ C:\Users\ghaem\Desktop\Projects\HK Code\PaleChampion\PaleChampion\PaleChampion\b
 C:\Users\ghaem\Desktop\Projects\HK Code\PaleChampion\PaleChampion\PaleChampion\bin\Debug\UnityEngine.IMGUIModule.xml
 C:\Users\ghaem\Desktop\Projects\HK Code\PaleChampion\PaleChampion\PaleChampion\bin\Debug\UnityEngine.ParticleSystemModule.xml
 C:\Users\ghaem\Desktop\Projects\HK Code\PaleChampion\PaleChampion\PaleChampion\bin\Debug\UnityEngine.Physics2DModule.xml
-C:\Users\ghaem\Desktop\Projects\HK Code\PaleChampion\PaleChampion\PaleChampion\bin\Debug\UnityEngine.UIModule.xml
-C:\Users\ghaem\Desktop\Projects\HK Code\PaleChampion\PaleChampion\PaleChampion\bin\Debug\UnityEngine.TextRenderingModule.xml
 C:\Users\ghaem\Desktop\Projects\HK Code\PaleChampion\PaleChampion\PaleChampion\bin\Debug\UnityEngine.PhysicsModule.xml
 C:\Users\ghaem\Desktop\Projects\HK Code\PaleChampion\PaleChampion\PaleChampion\bin\Debug\UnityEngine.AnimationModule.xml
 C:\Users\ghaem\Desktop\Projects\HK Code\PaleChampion\PaleChampion\PaleChampion\bin\Debug\UnityEngine.AIModule.xml
