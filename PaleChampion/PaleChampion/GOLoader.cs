@@ -29,6 +29,7 @@ namespace PaleChampion
 
         void Start()
         {
+            music = new List<AudioClip>();
             StartCoroutine(LoadGO());
         }
         IEnumerator LoadGO()
@@ -243,17 +244,17 @@ namespace PaleChampion
             string assetName2 = "";
             if (SystemInfo.operatingSystemFamily == OperatingSystemFamily.Windows)
             {
-                assetName2 = "fire";
+                assetName2 = "soundWin";
                 assetName = "smoke";
             }
             else if (SystemInfo.operatingSystemFamily == OperatingSystemFamily.MacOSX)
             {
-                assetName2 = "fireMC";
+                assetName2 = "soundOSX";
                 assetName = "smokeMC";
             }
             else if (SystemInfo.operatingSystemFamily == OperatingSystemFamily.Linux)
             {
-                assetName2 = "fireULin";
+                assetName2 = "soundLin";
                 assetName = "smokeULin";
             }
             else Logger.Log("ERROR OS NOT SUPPORTED.");
@@ -270,25 +271,15 @@ namespace PaleChampion
             Logger.Log("Fixed smoke");
 
             AssetBundle ab2 = AssetBundle.LoadFromFile(Path.Combine(Application.streamingAssetsPath, assetName2));
-            GameObject[] go2 = ab2.LoadAllAssets<GameObject>();
-            PaleChampion.preloadedGO["fire"] = Instantiate(go2[0]);
+            AudioClip[] go2 = ab2.LoadAllAssets<AudioClip>();
+            foreach(var i in go2)
+            {
+                Logger.Log("aud " + i.name);
+                DontDestroyOnLoad(i);
+                music.Add(i);
+            }
             ab2.Unload(false);
-            PaleChampion.preloadedGO["fire"].SetActive(false);
-            PaleChampion.preloadedGO["fire"].layer = 18;
-
-            ParticleSystem.CollisionModule collision = PaleChampion.preloadedGO["fire"].transform.GetChild(0).GetComponent<ParticleSystem>().collision;
-            collision.type = ParticleSystemCollisionType.World;
-            collision.sendCollisionMessages = true;
-            collision.mode = ParticleSystemCollisionMode.Collision2D;
-            collision.enabled = true;
-            collision.quality = ParticleSystemCollisionQuality.High;
-            collision.maxCollisionShapes = 256;
-            collision.dampenMultiplier = 0;
-            collision.radiusScale = .3f;
-            collision.collidesWith = 1 << 9;
-
-            DontDestroyOnLoad(PaleChampion.preloadedGO["fire"]);
-            Logger.Log("Fixed fire");
+            Logger.Log("Fixed music");
 
             PaleChampion.preloadedGO["music box"] = new GameObject("music box");
             GameObject bg = new GameObject("bg music");
@@ -300,6 +291,7 @@ namespace PaleChampion
             PaleChampion.preloadedGO["music box"].SetActive(false);
             Logger.Log("Fixed music box");
         }
+        public static List<AudioClip> music = new List<AudioClip>();
         private void OnDestroy()
         {
             Logger.Log("Dead Tex");

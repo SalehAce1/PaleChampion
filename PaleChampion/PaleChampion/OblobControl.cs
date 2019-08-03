@@ -68,7 +68,8 @@ namespace PaleChampion
             while (!end)
             {
                 _recoil.enabled = true;
-                Vector2 randomPos = new Vector2(UnityEngine.Random.Range(90f, 114f), UnityEngine.Random.Range(7f, 15.7f));
+                Vector2 randomPos = new Vector2(UnityEngine.Random.Range(90f, 114f), UnityEngine.Random.Range(PaleLurker.lastPhasePlat[0].transform.GetPositionY() + 0.5f, 19f));
+                if (PaleLurker.stringSawTack) randomPos = new Vector2(105f, 20f);
                 float speed = 12f;
                 var lc = gameObject.transform.localScale;
                 if (gameObject.transform.GetPositionX() - randomPos.x > 0)
@@ -84,6 +85,11 @@ namespace PaleChampion
                     gameObject.transform.position = Vector2.MoveTowards(gameObject.transform.position, randomPos, speed * Time.deltaTime);
                     if (Vector2.Distance(gameObject.transform.position, randomPos) % 2 == 0) speed -= 0.1f;
                     yield return null;
+                }
+                if (PaleLurker.stringSawTack)
+                {
+                    yield return new WaitWhile(() => PaleLurker.stringSawTack);
+                    continue;
                 }
                 yield return new WaitForSeconds(1f);
                 attacking = true;

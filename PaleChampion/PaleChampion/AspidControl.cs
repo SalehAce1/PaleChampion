@@ -122,6 +122,7 @@ namespace PaleChampion
                         StartCoroutine(BlobBulletBrain(i));
                         step += 90f;
                         _aud.clip = GOLoader.spitAud;
+                        _aud.volume = GameManager.instance.gameSettings.soundVolume;
                         _aud.Play();
                         yield return new WaitForSeconds(0.1f);
                     }
@@ -146,9 +147,19 @@ namespace PaleChampion
             _oldCtrl.enabled = false;
             StartCoroutine(AspidBrain());
             StartCoroutine(Dodge());
+            StartCoroutine(AspidDeath());
             Log("Killed");
         }
-
+        IEnumerator AspidDeath()
+        {
+            Log("lmao I cant die");
+            while (!PaleLurker.aspidsDie) yield return null;
+            _pos.y += 10f;
+            Log("lmao I am dying");
+            yield return new WaitForSeconds(0.5f);
+            Destroy(gameObject);
+            Log("lmao I feel betrayed");
+        }
         IEnumerator AspidBrain()
         {
             Log("Aspid mind begins");
@@ -158,9 +169,10 @@ namespace PaleChampion
             int num = 0;
             while (true)
             {
-                while (num < 10 && (otherAspid == null || !otherAspid.GetComponent<AspidControl>().firing))//!PaleLurker.pillarOn)
+                while (num < 2 && (otherAspid == null || !otherAspid.GetComponent<AspidControl>().firing))//!PaleLurker.pillarOn)
                 {
                     firing = true;
+                    yield return new WaitWhile(() => PaleLurker.flameUp);
                     _anim.Play("Idle");
                     yield return new WaitForSeconds(0.05f);
                     _anim.Play("Attack Antic");
@@ -183,6 +195,7 @@ namespace PaleChampion
                     spit.GetComponent<BoxCollider2D>().isTrigger = true;
                     _anim.Play("Attack");
                     _aud.clip = GOLoader.spitAud;
+                    _aud.volume = GameManager.instance.gameSettings.soundVolume;
                     _aud.Play();
                     num++;
                     yield return null;

@@ -19,7 +19,7 @@ namespace PaleChampion
 {
     internal class ObjectFlinger : MonoBehaviour
     {
-        public IEnumerator DelayStart(int min, int max)
+        public IEnumerator DelayStart(int min, int max, float vel = 30f, bool isLarger = false)
         {
             for (int i = min; i < max; i++)
             {
@@ -33,8 +33,11 @@ namespace PaleChampion
                 float angle = angle2 * Mathf.Deg2Rad;
                 Quaternion q = Quaternion.AngleAxis(angle2, Vector3.forward);
                 spike.transform.rotation = Quaternion.Euler(new Vector3(0, 0, angle2));//Quaternion.Slerp(spike.transform.rotation, q, Time.deltaTime * 1000f);
-                spike.GetComponent<Rigidbody2D>().velocity = new Vector2(30f * Mathf.Cos(angle), 30f * Mathf.Sin(angle));
+                spike.GetComponent<Rigidbody2D>().velocity = new Vector2(vel * Mathf.Cos(angle), vel * Mathf.Sin(angle));
                 spike.AddComponent<DaggerStuck>();
+                spike.AddComponent<TinkSound>();
+                spike.layer = 17;
+                if (isLarger) spike.transform.localScale *= 1.3f; 
             }
             yield return null;
         }

@@ -88,7 +88,6 @@ namespace PaleChampion
             ModHooks.Instance.GetPlayerVariableHook += GetVariableHook;
             int ind = 0;
             Assembly asm = Assembly.GetExecutingAssembly();
-            MusicLoad.LoadAssets.LoadWavFile();
             foreach (string res in asm.GetManifestResourceNames())
             {
                 if (!res.EndsWith(".png"))
@@ -137,10 +136,8 @@ namespace PaleChampion
 
         private void AddComponent()
         {
-            Log("Add component1");
             GameManager.instance.gameObject.AddComponent<GOLoader>();
             GameManager.instance.gameObject.AddComponent<LurkerFinder>();
-            Log("Add component2");
         }
 
         private object SetVariableHook(Type t, string key, object obj)

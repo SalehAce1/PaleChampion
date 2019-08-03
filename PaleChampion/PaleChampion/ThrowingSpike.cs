@@ -40,6 +40,12 @@ namespace PaleChampion
             trail.receiveShadows = false;
             trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             trail.allowOcclusionWhenDynamic = false;
+            StartCoroutine(DelayedDeath());
+        }
+        IEnumerator DelayedDeath()
+        {
+            yield return new WaitWhile(() => !PaleLurker.platPhaseEnd);
+            Destroy(gameObject);
         }
         private bool _once;
         private float _timeLive = 0f;

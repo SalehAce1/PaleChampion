@@ -55,15 +55,16 @@ namespace PaleChampion
 
         IEnumerator PillarMus(GameObject go)
         {
-            go.AddComponent<AudioSource>().clip = GOLoader.pillAud;
-            go.GetComponent<AudioSource>().Play();
-            go.GetComponent<AudioSource>().volume = 0.25f;
+            var aud = go.AddComponent<AudioSource>();
+            aud.clip = GOLoader.pillAud;
+            aud.Play();
+            aud.volume = GameManager.instance.gameSettings.soundVolume==0f ? 0f : 0.25f;
             yield return new WaitForSeconds(0.45f);
-            go.GetComponent<AudioSource>().Stop();
-            go.GetComponent<AudioSource>().clip = GOLoader.pillAud2;
-            go.GetComponent<AudioSource>().pitch = 1;
-            go.GetComponent<AudioSource>().volume = 0.25f;
-            go.GetComponent<AudioSource>().Play();
+            aud.Stop();
+            aud.clip = GOLoader.pillAud2;
+            aud.pitch = 1;
+            aud.volume = GameManager.instance.gameSettings.soundVolume == 0f ? 0f : 0.25f;
+            aud.Play();
         }
     }
 }

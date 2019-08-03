@@ -29,24 +29,47 @@ namespace PaleChampion
         }
         IEnumerator thisisme()
         {
-            yield return new WaitForSeconds(1f);
-            gameObject.AddComponent<Rigidbody2D>().isKinematic = true;
-            moveTo = 7.3f;
-            speed = 0.2f;
-            move = true;
+            yield return null;
+            if (moveTo == 0)
+            {
+                Log("HEREO");
+                yield return new WaitForSeconds(1f);
+                gameObject.AddComponent<Rigidbody2D>().isKinematic = true;
+                if (moveTo == 0) moveTo = 7.3f;
+                speed = 0.2f;
+                move = true;
+            }
         }
 
+        Vector2 currPos;
+        Vector2 finPos;
         void FixedUpdate()
         {
-            Vector2 currPos = gameObject.transform.position;
-            Vector2 finPos = new Vector2(currPos.x, moveTo);
-            if (move)
+            if (gameObject.transform.GetRotation2D() == 180f || gameObject.transform.GetRotation2D() == 0f)
             {
-                gameObject.transform.position = Vector2.MoveTowards(currPos, finPos, speed * 100f * Time.deltaTime);
+                currPos = gameObject.transform.position;
+                finPos = new Vector2(currPos.x, moveTo);
+                if (move)
+                {
+                    gameObject.transform.position = Vector2.MoveTowards(currPos, finPos, speed * 100f * Time.deltaTime);
+                }
+                if (currPos == finPos)
+                {
+                    move = false;
+                }
             }
-            if (currPos == finPos)
+            else
             {
-                move = false;
+                currPos = gameObject.transform.position;
+                finPos = new Vector2(moveTo, currPos.y);
+                if (move)
+                {
+                    gameObject.transform.position = Vector2.MoveTowards(currPos, finPos, speed * 100f * Time.deltaTime);
+                }
+                if (currPos == finPos)
+                {
+                    move = false;
+                }
             }
         }
         private static void Log(object obj)

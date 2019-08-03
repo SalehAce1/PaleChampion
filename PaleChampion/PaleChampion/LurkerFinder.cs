@@ -23,12 +23,10 @@ namespace PaleChampion
         {
             if (arg0.name == "GG_Oblobbles" && arg1.name == "GG_Workshop")
             {
-                Log("die");
                 AudioListener.pause = false;
                 newPaleLurk.GetComponent<tk2dSprite>().GetCurrentSpriteDef().material.mainTexture = oldPLTex;
                 GameCameras.instance.cameraFadeFSM.Fsm.SetState("FadeIn");
                 Destroy(newPaleLurk.GetComponent<PaleLurker>());
-                Log("adonde vas?");
             }
 
             if (arg1.name == "GG_Workshop") SetStatue();
@@ -52,13 +50,10 @@ namespace PaleChampion
             //Used 56's pale prince code here
             GameObject statue = Instantiate(GameObject.Find("GG_Statue_ElderHu"));
             statue.transform.SetPosition2D(201.2f, statue.transform.GetPositionY());
-            Log("did it");
             var scene = ScriptableObject.CreateInstance<BossScene>();
             scene.sceneName = "GG_Oblobbles";
-            Log("did it2");
             var bs = statue.GetComponent<BossStatue>();
             bs.bossScene = scene;
-            Log("did it3" + bs.StatueState.completedTier1);
             bs.statueStatePD = "lurkerDaddy";
             //if (tier1) bs.StatueState = 
             var gg = new BossStatue.Completion
@@ -72,14 +67,10 @@ namespace PaleChampion
                 usingAltVersion = false
             };
             bs.StatueState = gg;
-            Log("did it4");
             var details = new BossStatue.BossUIDetails();
             details.nameKey = details.nameSheet = "LURKER_NAME";
             details.descriptionKey = details.descriptionSheet = "LURKER_DESC";
             bs.bossDetails = details;
-            Log("did it5");
-            bs.statueDisplay.PrintSceneHierarchyTree();
-            Log("did it 7");
             foreach(var i in bs.statueDisplay.GetComponentsInChildren<SpriteRenderer>(true))
             {
                 i.sprite = PaleChampion.SPRITES[1];
@@ -116,13 +107,12 @@ namespace PaleChampion
 
         private void OnDestroy()
         {
-            Log("Dead Finder");
             USceneManager.activeSceneChanged -= SceneChanged;
         }
 
         public static void Log(object o)
         {
-            Logger.Log($"[{Assembly.GetExecutingAssembly().GetName().Name}]: " + o);
+            Logger.Log("Lurker Finder" + o);
         }
     }
 }
