@@ -313,3 +313,5 @@ C:\Users\ghaem\Desktop\Projects\HK Code\PaleChampion\PaleChampion\PaleChampion\b
 C:\Users\ghaem\Desktop\Projects\HK Code\PaleChampion\PaleChampion\PaleChampion\bin\Debug\GalaxyCSharp.dll
 C:\Users\ghaem\Desktop\Projects\HK Code\PaleChampion\PaleChampion\PaleChampion\bin\Debug\Mono.Security.dll
 C:\Users\ghaem\Desktop\Projects\HK Code\PaleChampion\PaleChampion\PaleChampion\obj\Release\PaleChampion.csprojResolveAssemblyReference.cache
+C:\Users\ghaem\Desktop\Projects\HK Code\PaleChampion\PaleChampion\PaleChampion\bin\Debug\UnityEngine.TextRenderingModule.xml
+C:\Users\ghaem\Desktop\Projects\HK Code\PaleChampion\PaleChampion\PaleChampion\bin\Debug\UnityEngine.UIModule.xml

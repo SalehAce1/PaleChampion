@@ -64,11 +64,13 @@ namespace PaleChampion
         }
         IEnumerator BasicMove2()
         {
-            gameObject.GetComponent<HealthManager>().hp = 900;
+            gameObject.GetComponent<HealthManager>().hp = 800;
             while (!end)
             {
                 _recoil.enabled = true;
-                Vector2 randomPos = new Vector2(UnityEngine.Random.Range(90f, 114f), UnityEngine.Random.Range(PaleLurker.lastPhasePlat[0].transform.GetPositionY() + 0.5f, 19f));
+                float minY = 12f;
+                if (PaleLurker.lastPhasePlat[0].transform.GetPositionY() > 12f) minY = PaleLurker.lastPhasePlat[0].transform.GetPositionY() + 1f;
+                Vector2 randomPos = new Vector2(UnityEngine.Random.Range(90f, 114f), UnityEngine.Random.Range(minY, 19f));
                 if (PaleLurker.stringSawTack) randomPos = new Vector2(105f, 20f);
                 float speed = 12f;
                 var lc = gameObject.transform.localScale;
